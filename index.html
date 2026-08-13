@@ -685,6 +685,52 @@
   }
   #m-delete:hover { background: #fdf1f1; }
 
+  #cloud-status { font-size: 12px; color: var(--text-light); margin-right: 4px; white-space: nowrap; }
+
+  #login-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(31,45,61,.55);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login-overlay[hidden] { display: none; }
+  .login-box {
+    background: #fff; border-radius: 14px;
+    padding: 32px 36px; width: 340px; max-width: calc(100vw - 40px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    text-align: center;
+  }
+  .login-logo {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    font-weight: 700; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto;
+  }
+  .login-box h2 { margin: 12px 0 6px; font-size: 20px; }
+  .login-box p { font-size: 13px; color: var(--text-light); margin: 0 0 18px; line-height: 1.5; }
+  .login-box input {
+    width: 100%; box-sizing: border-box;
+    padding: 10px 12px; border: 1px solid #d5dce3; border-radius: 8px;
+    font-size: 14px; margin-bottom: 10px; text-align: center;
+  }
+  .login-box input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  #login-send, #login-verify {
+    width: 100%; padding: 10px 12px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 14px; cursor: pointer;
+  }
+  #login-send:hover, #login-verify:hover { filter: brightness(.95); }
+  #login-send:disabled, #login-verify:disabled { opacity: .6; cursor: default; }
+  .login-secondary {
+    background: none; border: none;
+    color: var(--text-light); text-decoration: underline;
+    cursor: pointer; font-size: 12px; margin-top: 14px;
+  }
+  .login-secondary:hover { color: var(--text); }
+  #login-error { color: #d64545; font-size: 13px; margin-top: 12px; }
+
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(31,45,61,.28); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(31,45,61,.4); }
@@ -699,6 +745,8 @@
   <span class="crumb-sep" id="crumb-sep" hidden>›</span>
   <h1 id="view-title" spellcheck="false"></h1>
   <div class="spacer"></div>
+  <span id="cloud-status"></span>
+  <button id="btn-logout" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
   <button id="btn-bg" title="Hintergrund ändern">🎨 Hintergrund</button>
   <button id="btn-export" title="Alle Boards als Datei sichern">Export</button>
   <button id="btn-import" title="Boards aus Datei laden">Import</button>
@@ -717,6 +765,26 @@
 </div>
 
 <div id="board"></div>
+
+<div id="login-overlay" hidden>
+  <div class="login-box">
+    <div class="login-logo">B</div>
+    <h2>Kanban-Board</h2>
+    <p>Melde dich mit deiner E-Mail-Adresse an, um deine Boards auf allen Geräten zu nutzen. Du bekommst einen Anmeldecode zugeschickt – kein Passwort nötig.</p>
+    <div id="login-step-email">
+      <input id="login-email" type="email" placeholder="deine@email.de" autocomplete="email">
+      <button id="login-send">Code senden</button>
+    </div>
+    <div id="login-step-code" hidden>
+      <p id="login-sent-info"></p>
+      <input id="login-code" inputmode="numeric" autocomplete="one-time-code" placeholder="Code aus der E-Mail" maxlength="10">
+      <button id="login-verify">Anmelden</button>
+      <button id="login-back" class="login-secondary">Andere E-Mail-Adresse verwenden</button>
+    </div>
+    <div id="login-error" hidden></div>
+    <button id="login-offline" class="login-secondary">Ohne Konto weiterarbeiten (nur dieses Gerät)</button>
+  </div>
+</div>
 
 <div id="modal-backdrop">
   <div id="modal">
@@ -750,6 +818,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
 
@@ -790,6 +859,7 @@ function load() {
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  scheduleCloudSave();
 }
 
 function uid() {
@@ -1845,8 +1915,191 @@ importFile.addEventListener("change", () => {
   reader.readAsText(file);
 });
 
+/* ================= Cloud-Speicher (Supabase) ================= */
+
+const SUPABASE_URL = "https://ohpnzzkblyttiospzrhe.supabase.co";
+const SUPABASE_KEY = "sb_publishable_YmhqnEoDHm9w2WFRvmRy0Q_uBjFjq6V";
+// Falls das Supabase-Skript nicht laden konnte (z. B. offline), läuft alles lokal weiter
+const sb = (typeof supabase !== "undefined")
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+let cloudUser = null;      // angemeldeter Benutzer oder null
+let lastSyncedAt = null;   // Zeitstempel des zuletzt abgeglichenen Cloud-Stands
+let cloudDirty = false;    // es gibt lokale Änderungen, die noch nicht in der Cloud sind
+let cloudSaveTimer = null;
+
+const cloudStatusEl = document.getElementById("cloud-status");
+function setCloudStatus(text, title) {
+  cloudStatusEl.textContent = text;
+  cloudStatusEl.title = title || "";
+}
+
+function scheduleCloudSave() {
+  if (!sb || !cloudUser) return;
+  cloudDirty = true;
+  setCloudStatus("☁️ …", "Änderungen werden gespeichert");
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(cloudSave, 1200);
+}
+
+async function cloudSave() {
+  if (!sb || !cloudUser || !cloudDirty) return;
+  cloudDirty = false;
+  const now = new Date().toISOString();
+  const { error } = await sb.from("board_states").upsert({
+    user_id: cloudUser.id, state, updated_at: now
+  });
+  if (error) {
+    cloudDirty = true;
+    setCloudStatus("⚠️ nicht synchronisiert",
+      "Cloud gerade nicht erreichbar – deine Änderungen sind lokal gesichert und werden automatisch nachgetragen. (" + error.message + ")");
+  } else {
+    lastSyncedAt = now;
+    if (!cloudDirty) setCloudStatus("☁️ gespeichert", "Alle Änderungen sind in der Cloud");
+  }
+}
+
+// Nicht gespeicherte Änderungen automatisch nachtragen
+window.addEventListener("online", () => { if (cloudDirty) cloudSave(); });
+setInterval(() => { if (cloudDirty) cloudSave(); }, 30000);
+
+// Beim Zurückkehren zum Tab: neueren Stand von anderen Geräten übernehmen
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") cloudPull();
+});
+
+async function cloudPull() {
+  if (!sb || !cloudUser) return;
+  if (cloudDirty) return;                              // eigene Änderungen gehen vor
+  if (backdrop.classList.contains("open")) return;     // nicht mitten in einer offenen Aufgabe
+  const { data, error } = await sb.from("board_states")
+    .select("state, updated_at").eq("user_id", cloudUser.id).maybeSingle();
+  if (error || !data) return;
+  if (lastSyncedAt && data.updated_at <= lastSyncedAt) return;
+  state = data.state;
+  lastSyncedAt = data.updated_at;
+  render();
+}
+
+/* ================= Anmeldung ================= */
+
+const loginOverlay = document.getElementById("login-overlay");
+const loginEmail = document.getElementById("login-email");
+const loginCode = document.getElementById("login-code");
+const loginError = document.getElementById("login-error");
+const loginStepEmail = document.getElementById("login-step-email");
+const loginStepCode = document.getElementById("login-step-code");
+const loginSendBtn = document.getElementById("login-send");
+const loginVerifyBtn = document.getElementById("login-verify");
+
+function showLoginError(msg) {
+  loginError.textContent = msg;
+  loginError.hidden = !msg;
+}
+
+loginSendBtn.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  if (!email.includes("@")) { showLoginError("Bitte eine gültige E-Mail-Adresse eingeben."); return; }
+  showLoginError("");
+  loginSendBtn.disabled = true;
+  loginSendBtn.textContent = "Sende…";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  loginSendBtn.disabled = false;
+  loginSendBtn.textContent = "Code senden";
+  if (error) {
+    showLoginError("Senden fehlgeschlagen: " + error.message);
+    return;
+  }
+  document.getElementById("login-sent-info").textContent =
+    "Code wurde an " + email + " geschickt. Schau auch im Spam-Ordner nach.";
+  loginStepEmail.hidden = true;
+  loginStepCode.hidden = false;
+  loginCode.focus();
+});
+
+loginVerifyBtn.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const token = loginCode.value.trim();
+  if (token.length < 6) { showLoginError("Bitte den Code aus der E-Mail eingeben."); return; }
+  showLoginError("");
+  loginVerifyBtn.disabled = true;
+  loginVerifyBtn.textContent = "Prüfe…";
+  const { data, error } = await sb.auth.verifyOtp({ email, token, type: "email" });
+  loginVerifyBtn.disabled = false;
+  loginVerifyBtn.textContent = "Anmelden";
+  if (error || !data || !data.user) {
+    showLoginError("Code ungültig oder abgelaufen. Bitte erneut versuchen.");
+    return;
+  }
+  loginCode.value = "";
+  await onLoggedIn(data.user);
+});
+
+loginEmail.addEventListener("keydown", e => { if (e.key === "Enter") loginSendBtn.click(); });
+loginCode.addEventListener("keydown", e => { if (e.key === "Enter") loginVerifyBtn.click(); });
+
+document.getElementById("login-back").addEventListener("click", () => {
+  loginStepCode.hidden = true;
+  loginStepEmail.hidden = false;
+  showLoginError("");
+  loginEmail.focus();
+});
+
+document.getElementById("login-offline").addEventListener("click", () => {
+  loginOverlay.hidden = true;
+  setCloudStatus("nur lokal", "Ohne Konto: Daten liegen nur in diesem Browser");
+});
+
+document.getElementById("btn-logout").addEventListener("click", async () => {
+  if (!confirm("Abmelden? Deine Boards bleiben in der Cloud gespeichert und sind nach der nächsten Anmeldung wieder da.")) return;
+  await sb.auth.signOut();
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+async function onLoggedIn(user) {
+  cloudUser = user;
+  loginOverlay.hidden = true;
+  document.getElementById("btn-logout").hidden = false;
+  setCloudStatus("☁️ …", "Lade Daten aus der Cloud");
+  const { data, error } = await sb.from("board_states")
+    .select("state, updated_at").eq("user_id", user.id).maybeSingle();
+  if (error) {
+    setCloudStatus("⚠️ nicht synchronisiert", "Cloud gerade nicht erreichbar – es wird vorerst lokal gearbeitet. (" + error.message + ")");
+    render();
+    return;
+  }
+  if (data) {
+    // Cloud-Stand übernehmen
+    state = data.state;
+    lastSyncedAt = data.updated_at;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setCloudStatus("☁️ gespeichert", "Alle Änderungen sind in der Cloud");
+  } else {
+    // Erste Anmeldung: vorhandene lokale Boards in die Cloud übernehmen
+    cloudDirty = true;
+    await cloudSave();
+  }
+  render();
+}
+
 /* ================= Start ================= */
-render();
+
+async function initApp() {
+  render();
+  if (!sb) {
+    setCloudStatus("nur lokal", "Cloud-Funktion nicht verfügbar (kein Internet?)");
+    return;
+  }
+  const { data } = await sb.auth.getSession();
+  if (data && data.session) {
+    await onLoggedIn(data.session.user);
+  } else {
+    loginOverlay.hidden = false;
+  }
+}
+initApp();
 </script>
 </body>
 </html>
