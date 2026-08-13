@@ -12,12 +12,54 @@
     --text-light: #7d8fa1;
     --accent: #2f7de1;
     --glass: rgba(255,255,255,.6);
+    --glass-strong: rgba(255,255,255,.75);
+    --btn-hover: #ffffff;
+    --tile-bg: var(--tile-bg);
+    --col-bg: rgba(255,255,255,.5);
+    --hover: var(--hover);
+    --hover-soft: var(--hover-soft);
+    --border: var(--border);
+    --border-soft: var(--border-soft);
+    --input-border: var(--input-border);
+    --modal-bg: rgba(255,255,255,.97);
+    --dropdown-bg: rgba(255,255,255,.88);
+    --edge: rgba(255,255,255,.6);
     --blur: blur(16px) saturate(1.4);
     --shadow: 0 1px 2px rgba(31,45,61,.08), 0 4px 12px rgba(31,45,61,.08);
     --shadow-md: 0 6px 16px rgba(31,45,61,.13), 0 14px 36px rgba(31,45,61,.11);
     --shadow-lg: 0 24px 70px rgba(15,25,40,.32);
     --radius: 12px;
   }
+  body.dark {
+    --bg: #161c26;
+    --card-bg: #273140;
+    --text: #dbe4ee;
+    --text-light: #8b9cb0;
+    --glass: rgba(20,26,36,.6);
+    --glass-strong: rgba(35,44,58,.8);
+    --btn-hover: #3b4a5e;
+    --tile-bg: rgba(38,47,61,.95);
+    --col-bg: rgba(22,29,39,.55);
+    --hover: #334052;
+    --hover-soft: #2d3847;
+    --border: #3a4759;
+    --border-soft: #323e4e;
+    --input-border: #47556b;
+    --modal-bg: rgba(32,40,52,.98);
+    --dropdown-bg: rgba(38,47,61,.95);
+    --edge: rgba(255,255,255,.08);
+  }
+  body.dark input:not([type=range]):not([type=checkbox]), body.dark textarea {
+    background: #1d2530;
+    color: var(--text);
+    border-color: var(--input-border);
+  }
+  body.dark ::placeholder { color: #74879e; }
+  body.dark .board-tile.add-tile { background: rgba(255,255,255,.05); }
+  body.dark .board-tile.add-tile:hover { background: rgba(255,255,255,.1); }
+  body.dark #m-delete:hover { background: rgba(214,69,69,.15); }
+  body.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); }
+  body.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.34); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -32,10 +74,10 @@
 
   /* ---------- Topbar ---------- */
   header {
-    background: rgba(255,255,255,.6);
+    background: var(--glass);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
-    border-bottom: 1px solid rgba(255,255,255,.55);
+    border-bottom: 1px solid var(--edge);
     box-shadow: 0 2px 20px rgba(31,45,61,.08);
     padding: 10px 20px;
     display: flex;
@@ -66,7 +108,7 @@
     border-radius: 6px;
     white-space: nowrap;
   }
-  header .crumb:hover { background: #eef2f6; color: var(--text); }
+  header .crumb:hover { background: var(--hover); color: var(--text); }
   header .crumb-sep { color: var(--text-light); }
   header h1 {
     font-size: 17px;
@@ -78,10 +120,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  header h1[contenteditable="true"]:hover, header h1:focus { background: #eef2f6; }
+  header h1[contenteditable="true"]:hover, header h1:focus { background: var(--hover); }
   header .spacer { flex: 1; }
   header button {
-    background: rgba(255,255,255,.75);
+    background: var(--glass-strong);
     border: 1px solid rgba(31,45,61,.09);
     border-radius: 9px;
     padding: 6px 13px;
@@ -92,7 +134,7 @@
     box-shadow: var(--shadow);
     transition: transform .12s, box-shadow .12s, background .12s;
   }
-  header button:hover { background: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  header button:hover { background: var(--btn-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
   /* ---------- Startseite ---------- */
   #home {
@@ -118,7 +160,7 @@
     background: var(--glass);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
-    border: 1px solid rgba(255,255,255,.6);
+    border: 1px solid var(--edge);
     border-radius: 20px;
     padding: 22px 24px;
     box-shadow: var(--shadow-md);
@@ -138,12 +180,12 @@
     max-width: 1100px;
   }
   .board-tile {
-    background: rgba(255,255,255,.92);
+    background: var(--tile-bg);
     border-radius: 14px;
     box-shadow: var(--shadow);
     cursor: pointer;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,.7);
+    border: 1px solid var(--edge);
     transition: box-shadow .18s, transform .18s;
     position: relative;
   }
@@ -161,7 +203,7 @@
     outline: none;
     border-radius: 4px;
   }
-  .board-tile .tile-name:focus { background: #eef2f6; padding: 0 4px; }
+  .board-tile .tile-name:focus { background: var(--hover); padding: 0 4px; }
   .board-tile .tile-info {
     font-size: 12.5px;
     color: var(--text-light);
@@ -178,7 +220,7 @@
     visibility: hidden;
   }
   .board-tile:hover .tile-menu-btn { visibility: visible; }
-  .board-tile .tile-menu-btn:hover { background: #eef2f6; color: var(--text); }
+  .board-tile .tile-menu-btn:hover { background: var(--hover); color: var(--text); }
   .board-tile.dragging { opacity: .4; }
   .board-tile.drag-over-tile { outline: 2px dashed var(--accent); outline-offset: 4px; }
 
@@ -212,12 +254,12 @@
     max-width: 1100px;
   }
   .pinned-card {
-    background: rgba(255,255,255,.92);
+    background: var(--tile-bg);
     border-radius: 12px;
     box-shadow: var(--shadow);
     padding: 12px 14px;
     cursor: pointer;
-    border: 1px solid rgba(255,255,255,.7);
+    border: 1px solid var(--edge);
     transition: transform .15s, box-shadow .15s;
   }
   .pinned-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
@@ -308,7 +350,7 @@
   .col-menu-btn:hover { background: rgba(255,255,255,.25); }
 
   .col-body {
-    background: rgba(255,255,255,.5);
+    background: var(--col-bg);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     padding: 8px;
@@ -319,7 +361,7 @@
     min-height: 40px;
   }
   .col-footer {
-    background: rgba(255,255,255,.5);
+    background: var(--col-bg);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border-radius: 0 0 var(--radius) var(--radius);
@@ -336,7 +378,7 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  .add-task-btn:hover { background: rgba(255,255,255,.75); color: var(--text); }
+  .add-task-btn:hover { background: var(--glass-strong); color: var(--text); }
   .add-task-input {
     width: 100%;
     border: 2px solid var(--accent);
@@ -356,12 +398,33 @@
     padding: 10px 12px;
     font-size: 13.5px;
     cursor: pointer;
-    border: 1px solid rgba(255,255,255,.8);
+    border: 1px solid var(--edge);
     transition: transform .12s, box-shadow .12s;
+    position: relative;
   }
   .card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .card.dragging { opacity: .4; }
-  .card .card-title { word-wrap: break-word; }
+  .card .card-title {
+    word-wrap: break-word;
+    outline: none;
+    border-radius: 4px;
+    padding-right: 22px;
+  }
+  .card .card-title[contenteditable="true"] { background: var(--hover); padding: 2px 22px 2px 4px; }
+  .card .card-edit-btn {
+    position: absolute;
+    top: 7px; right: 6px;
+    background: var(--tile-bg);
+    border: none;
+    color: var(--text-light);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 5px;
+    visibility: hidden;
+  }
+  .card:hover .card-edit-btn { visibility: visible; }
+  .card .card-edit-btn:hover { background: var(--hover); color: var(--text); }
   .card .card-meta {
     margin-top: 6px;
     display: flex;
@@ -383,7 +446,7 @@
     padding: 10px;
   }
   #add-col button {
-    background: rgba(255,255,255,.55);
+    background: var(--glass-strong);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border: none;
@@ -396,7 +459,7 @@
     box-shadow: var(--shadow);
     transition: background .12s, transform .12s;
   }
-  #add-col button:hover { background: rgba(255,255,255,.85); transform: translateY(-1px); }
+  #add-col button:hover { background: var(--btn-hover); transform: translateY(-1px); }
   #add-col input {
     border: 2px solid var(--accent);
     border-radius: 6px;
@@ -409,10 +472,10 @@
   /* ---------- Dropdown menu ---------- */
   .dropdown {
     position: fixed;
-    background: rgba(255,255,255,.88);
+    background: var(--dropdown-bg);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
-    border: 1px solid rgba(255,255,255,.6);
+    border: 1px solid var(--edge);
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     padding: 6px 0;
@@ -428,9 +491,9 @@
     align-items: center;
     gap: 8px;
   }
-  .dropdown .item:hover { background: #eef2f6; }
+  .dropdown .item:hover { background: var(--hover); }
   .dropdown .item.danger { color: #d64545; }
-  .dropdown .sep { height: 1px; background: #e3e8ee; margin: 5px 0; }
+  .dropdown .sep { height: 1px; background: var(--border); margin: 5px 0; }
   .dropdown .swatches {
     display: grid;
     grid-template-columns: repeat(5, 26px);
@@ -460,9 +523,9 @@
   }
   #modal-backdrop.open { display: flex; }
   #modal {
-    background: rgba(255,255,255,.97);
+    background: var(--modal-bg);
     border-radius: 18px;
-    border: 1px solid rgba(255,255,255,.7);
+    border: 1px solid var(--edge);
     width: 640px;
     max-width: 100%;
     max-height: 88vh;
@@ -476,7 +539,7 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    border-bottom: 1px solid #eef1f4;
+    border-bottom: 1px solid var(--border-soft);
   }
   #modal .m-col-badge {
     font-size: 11px;
@@ -495,12 +558,13 @@
     outline: none;
     font-family: inherit;
     color: var(--text);
+    background: transparent;
     resize: none;
     line-height: 1.35;
   }
   #m-pin {
     background: none;
-    border: 1px solid #d6dee6;
+    border: 1px solid var(--input-border);
     border-radius: 6px;
     font-size: 15px;
     cursor: pointer;
@@ -510,7 +574,7 @@
     color: var(--text-light);
     white-space: nowrap;
   }
-  #m-pin:hover { background: #eef2f6; }
+  #m-pin:hover { background: var(--hover); }
   #m-pin.pinned {
     background: #fff3d6;
     border-color: #f0c869;
@@ -522,7 +586,7 @@
     cursor: pointer; line-height: 1;
     padding: 2px 6px; border-radius: 6px;
   }
-  #modal .m-close:hover { background: #eef2f6; }
+  #modal .m-close:hover { background: var(--hover); }
   #modal .m-body {
     padding: 14px 22px;
     overflow-y: auto;
@@ -537,7 +601,7 @@
   }
   #m-desc {
     width: 100%;
-    border: 1px solid #e3e8ee;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px;
     font-size: 13.5px;
@@ -558,7 +622,7 @@
   }
   .check-bar {
     height: 5px;
-    background: #e8edf2;
+    background: var(--border-soft);
     border-radius: 3px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -576,7 +640,7 @@
     padding: 6px 8px;
     border-radius: 6px;
   }
-  .check-item:hover { background: #f4f6f8; }
+  .check-item:hover { background: var(--hover-soft); }
   .check-item input[type=checkbox] {
     width: 16px; height: 16px;
     margin-top: 2px;
@@ -597,7 +661,7 @@
   .check-add { display: flex; gap: 8px; margin-top: 6px; }
   .check-add input {
     flex: 1;
-    border: 1px solid #e3e8ee;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 13.5px;
@@ -607,17 +671,17 @@
   .check-add input:focus { border-color: var(--accent); }
   .check-add button {
     background: none;
-    border: 1px solid #d6dee6;
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 0 14px;
     color: var(--text);
     font-size: 13px;
     cursor: pointer;
   }
-  .check-add button:hover { background: #eef2f6; }
+  .check-add button:hover { background: var(--hover); }
 
   .comment {
-    background: #f4f6f8;
+    background: var(--hover-soft);
     border-radius: 8px;
     padding: 9px 12px;
     margin-bottom: 8px;
@@ -644,7 +708,7 @@
   .comment-form { display: flex; gap: 8px; margin-top: 4px; }
   .comment-form textarea {
     flex: 1;
-    border: 1px solid #e3e8ee;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 9px 10px;
     font-size: 13.5px;
@@ -668,7 +732,7 @@
 
   #modal .m-foot {
     padding: 12px 22px;
-    border-top: 1px solid #eef1f4;
+    border-top: 1px solid var(--border-soft);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -695,7 +759,7 @@
   }
   #login-overlay[hidden] { display: none; }
   .login-box {
-    background: #fff; border-radius: 14px;
+    background: var(--modal-bg); border-radius: 14px;
     padding: 32px 36px; width: 340px; max-width: calc(100vw - 40px);
     box-shadow: 0 12px 40px rgba(0,0,0,.25);
     text-align: center;
@@ -711,7 +775,7 @@
   .login-box p { font-size: 13px; color: var(--text-light); margin: 0 0 18px; line-height: 1.5; }
   .login-box input {
     width: 100%; box-sizing: border-box;
-    padding: 10px 12px; border: 1px solid #d5dce3; border-radius: 8px;
+    padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px;
     font-size: 14px; margin-bottom: 10px; text-align: center;
   }
   .login-box input:focus { outline: 2px solid var(--accent); border-color: transparent; }
@@ -731,6 +795,83 @@
   .login-secondary:hover { color: var(--text); }
   #login-error { color: #d64545; font-size: 13px; margin-top: 12px; }
 
+  /* ---------- Eigenes Hintergrundbild ---------- */
+  #custom-bg {
+    position: fixed;
+    inset: -60px;
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .dropdown .slider-row {
+    padding: 6px 14px 4px;
+    font-size: 12px;
+    color: var(--text-light);
+  }
+  .dropdown .slider-row input[type=range] {
+    width: 100%;
+    margin-top: 2px;
+    accent-color: var(--accent);
+  }
+
+  /* ---------- Was ist neu ---------- */
+  #btn-news { position: relative; }
+  #news-dot {
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #ef5350;
+    box-shadow: 0 0 0 2px var(--card-bg);
+  }
+  #news-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(25,35,50,.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8vh 16px;
+    z-index: 250;
+  }
+  #news-backdrop.open { display: flex; }
+  #news-modal {
+    background: var(--modal-bg);
+    border-radius: 18px;
+    border: 1px solid var(--edge);
+    width: 480px;
+    max-width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  #news-modal .n-head {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #news-modal .n-head h2 { font-size: 17px; }
+  #news-modal .n-body {
+    padding: 4px 22px 20px;
+    overflow-y: auto;
+  }
+  .news-entry { margin-top: 16px; }
+  .news-entry .n-date { font-size: 11.5px; color: var(--text-light); }
+  .news-entry h4 { font-size: 14px; margin: 2px 0 6px; }
+  .news-entry ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(31,45,61,.28); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(31,45,61,.4); }
@@ -747,11 +888,16 @@
   <div class="spacer"></div>
   <span id="cloud-status"></span>
   <button id="btn-logout" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
+  <button id="btn-news" title="Was ist neu?">✨ Neu<span id="news-dot" hidden></span></button>
+  <button id="btn-theme" title="Dunklen/hellen Modus umschalten">🌙</button>
   <button id="btn-bg" title="Hintergrund ändern">🎨 Hintergrund</button>
   <button id="btn-export" title="Alle Boards als Datei sichern">Export</button>
   <button id="btn-import" title="Boards aus Datei laden">Import</button>
   <input type="file" id="import-file" accept=".json" hidden>
+  <input type="file" id="bg-file" accept="image/*" hidden>
 </header>
+
+<div id="custom-bg" hidden></div>
 
 <div id="home">
   <div class="section">
@@ -783,6 +929,16 @@
     </div>
     <div id="login-error" hidden></div>
     <button id="login-offline" class="login-secondary">Ohne Konto weiterarbeiten (nur dieses Gerät)</button>
+  </div>
+</div>
+
+<div id="news-backdrop">
+  <div id="news-modal">
+    <div class="n-head">
+      <h2>✨ Was ist neu?</h2>
+      <button class="m-close" id="news-close" title="Schließen">&times;</button>
+    </div>
+    <div class="n-body" id="news-body"></div>
   </div>
 </div>
 
@@ -906,7 +1062,7 @@ function taskCount(board) {
 /* ================= Hintergrund der Startseite ================= */
 
 const BG_THEMES = [
-  { key: "klassisch", name: "Klassisch", bg: "#f4f5f7" },
+  { key: "klassisch", name: "Klassisch", bg: "var(--bg)" },
   { key: "ozean", name: "Ozean",
     bg: "radial-gradient(1100px 520px at 90% -10%, rgba(255,255,255,.4), transparent 60%), linear-gradient(135deg, #5b7cfa 0%, #8e54c9 100%)" },
   { key: "sonnenuntergang", name: "Sonnenuntergang",
@@ -919,10 +1075,76 @@ const BG_THEMES = [
     bg: "radial-gradient(900px 500px at 80% -10%, rgba(120,160,255,.25), transparent 60%), linear-gradient(135deg, #243949, #0d1b2a)" }
 ];
 
+const BG_IMG_KEY = "kanban-custom-bg-image";
+const customBgEl = document.getElementById("custom-bg");
+
+function applyTheme() {
+  const dark = state.theme === "dunkel";
+  document.body.classList.toggle("dark", dark);
+  const btn = document.getElementById("btn-theme");
+  btn.textContent = dark ? "☀️" : "🌙";
+  btn.title = dark ? "Zum hellen Modus wechseln" : "Zum dunklen Modus wechseln";
+}
+
 function applyBg() {
+  applyTheme();
+  if (state.homeBg === "eigenes") {
+    const img = localStorage.getItem(BG_IMG_KEY);
+    if (img) {
+      document.body.style.background = "var(--bg)";
+      customBgEl.hidden = false;
+      customBgEl.style.backgroundImage = `url(${img})`;
+      customBgEl.style.filter = `blur(${state.bgBlur || 0}px)`;
+      customBgEl.style.opacity = (state.bgOpacity != null ? state.bgOpacity : 100) / 100;
+      return;
+    }
+  }
+  customBgEl.hidden = true;
   const t = BG_THEMES.find(x => x.key === state.homeBg) || BG_THEMES[1];
   document.body.style.background = t.bg;
 }
+
+document.getElementById("btn-theme").addEventListener("click", () => {
+  state.theme = state.theme === "dunkel" ? "hell" : "dunkel";
+  save();
+  applyTheme();
+});
+
+/* --- Eigenes Hintergrundbild hochladen --- */
+
+const bgFile = document.getElementById("bg-file");
+bgFile.addEventListener("change", () => {
+  const file = bgFile.files[0];
+  bgFile.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // Auf sinnvolle Größe verkleinern, damit es in den Browser-Speicher passt
+      const f = Math.min(1, 1920 / img.width, 1200 / img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * f);
+      canvas.height = Math.round(img.height * f);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", .85);
+      try {
+        localStorage.setItem(BG_IMG_KEY, dataUrl);
+      } catch (e) {
+        alert("Das Bild ist zu groß für den Browser-Speicher. Bitte ein kleineres Bild wählen.");
+        return;
+      }
+      state.homeBg = "eigenes";
+      if (state.bgBlur == null) state.bgBlur = 0;
+      if (state.bgOpacity == null) state.bgOpacity = 100;
+      save();
+      applyBg();
+    };
+    img.onerror = () => alert("Das Bild konnte nicht gelesen werden.");
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
 
 function openBgMenu(anchor) {
   closeDropdown();
@@ -946,6 +1168,66 @@ function openBgMenu(anchor) {
     });
     dd.appendChild(it);
   }
+
+  // --- Eigenes Bild ---
+  const sep = document.createElement("div");
+  sep.className = "sep";
+  dd.appendChild(sep);
+
+  const mkItem = (label, fn, danger) => {
+    const it = document.createElement("div");
+    it.className = "item" + (danger ? " danger" : "");
+    it.textContent = label;
+    it.addEventListener("click", fn);
+    dd.appendChild(it);
+    return it;
+  };
+  const mkSlider = (label, min, max, value, oninput) => {
+    const row = document.createElement("div");
+    row.className = "slider-row";
+    const lab = document.createElement("div");
+    lab.textContent = label;
+    const range = document.createElement("input");
+    range.type = "range";
+    range.min = min; range.max = max; range.value = value;
+    range.addEventListener("input", () => oninput(+range.value));
+    row.append(lab, range);
+    dd.appendChild(row);
+  };
+
+  const hasImg = !!localStorage.getItem(BG_IMG_KEY);
+  mkItem("🖼️ " + (hasImg ? "Anderes Bild hochladen…" : "Eigenes Bild hochladen…"), () => {
+    closeDropdown();
+    bgFile.click();
+  });
+  if (hasImg) {
+    mkItem("Eigenes Bild verwenden" + (active === "eigenes" ? " ✓" : ""), () => {
+      state.homeBg = "eigenes";
+      save();
+      applyBg();
+      closeDropdown();
+    });
+    if (active === "eigenes") {
+      mkSlider("Unschärfe", 0, 30, state.bgBlur || 0, v => {
+        state.bgBlur = v;
+        save();
+        applyBg();
+      });
+      mkSlider("Transparenz", 0, 80, 100 - (state.bgOpacity != null ? state.bgOpacity : 100), v => {
+        state.bgOpacity = 100 - v;
+        save();
+        applyBg();
+      });
+    }
+    mkItem("Eigenes Bild entfernen", () => {
+      localStorage.removeItem(BG_IMG_KEY);
+      if (state.homeBg === "eigenes") state.homeBg = "ozean";
+      save();
+      applyBg();
+      closeDropdown();
+    }, true);
+  }
+
   document.body.appendChild(dd);
   const r = anchor.getBoundingClientRect();
   dd.style.top = (r.bottom + 6) + "px";
@@ -1375,7 +1657,43 @@ function renderCard(task) {
   const t = document.createElement("div");
   t.className = "card-title";
   t.textContent = task.title;
+  t.spellcheck = false;
   card.appendChild(t);
+
+  // Umbenennen direkt auf der Karte (über den Stift beim Hovern)
+  const editBtn = document.createElement("button");
+  editBtn.className = "card-edit-btn";
+  editBtn.textContent = "✏️";
+  editBtn.title = "Umbenennen";
+  editBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    card.draggable = false;
+    t.contentEditable = "true";
+    t.focus();
+    const range = document.createRange();
+    range.selectNodeContents(t);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+  card.appendChild(editBtn);
+
+  t.addEventListener("blur", () => {
+    if (!t.isContentEditable) return;
+    t.contentEditable = "false";
+    card.draggable = true;
+    const v = t.textContent.trim();
+    if (v && v !== task.title) { task.title = v; save(); }
+    t.textContent = task.title;
+  });
+  t.addEventListener("keydown", e => {
+    if (!t.isContentEditable) return;
+    if (e.key === "Enter") { e.preventDefault(); t.blur(); }
+    if (e.key === "Escape") { t.textContent = task.title; t.blur(); }
+  });
+  t.addEventListener("click", e => {
+    if (t.isContentEditable) e.stopPropagation();
+  });
 
   const meta = document.createElement("div");
   meta.className = "card-meta";
@@ -1665,7 +1983,6 @@ function openModal(taskId) {
   mColBadge.textContent = col.name;
   mColBadge.style.background = col.color;
   mTitle.value = task.title;
-  autosize(mTitle);
   mDesc.value = task.description || "";
   mCreated.textContent = "Erstellt am " + formatDate(task.createdAt);
   updatePinButton(task);
@@ -1675,6 +1992,8 @@ function openModal(taskId) {
   mCommentInput.value = "";
 
   backdrop.classList.add("open");
+  // Erst nach dem Einblenden: bei verstecktem Modal ist scrollHeight 0
+  autosize(mTitle);
 }
 
 function closeModal() {
@@ -1845,7 +2164,10 @@ backdrop.addEventListener("click", e => {
   if (e.target === backdrop) closeModal();
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && backdrop.classList.contains("open")) closeModal();
+  if (e.key !== "Escape") return;
+  const newsBd = document.getElementById("news-backdrop");
+  if (newsBd.classList.contains("open")) { newsBd.classList.remove("open"); return; }
+  if (backdrop.classList.contains("open")) closeModal();
 });
 document.getElementById("m-delete").addEventListener("click", () => {
   const f = modalTaskId ? findTask(modalTaskId) : null;
@@ -1914,6 +2236,66 @@ importFile.addEventListener("change", () => {
   };
   reader.readAsText(file);
 });
+
+/* ================= Was ist neu? ================= */
+
+const CHANGELOG = [
+  { version: 3, date: "13.08.2026", title: "Personalisierung", items: [
+    "🌙 Dunkler Modus – über den Mond/Sonne-Schalter oben rechts umschalten.",
+    "🖼️ Eigenes Hintergrundbild hochladen (Menü „Hintergrund“) – mit Reglern für Unschärfe und Transparenz.",
+    "✏️ Aufgaben direkt auf der Karte umbenennen: mit der Maus über eine Karte fahren und auf den Stift klicken.",
+    "✨ Dieser „Was ist neu?“-Bereich – zeigt dir nach jedem Update die Neuerungen."
+  ]},
+  { version: 2, date: "13.08.2026", title: "Cloud-Sync", items: [
+    "☁️ Anmeldung per E-Mail-Code – ganz ohne Passwort.",
+    "Deine Boards werden in der Cloud gespeichert und auf allen Geräten abgeglichen.",
+    "Offline weiterarbeiten ist möglich – Änderungen werden automatisch nachgetragen."
+  ]},
+  { version: 1, date: "13.08.2026", title: "Erste Version", items: [
+    "Mehrere Boards mit Spalten und Aufgaben, Drag & Drop, Checklisten, Kommentaren und angepinnten Aufgaben.",
+    "Export und Import aller Boards als Datei."
+  ]}
+];
+const NEWS_SEEN_KEY = "kanban-news-seen";
+const newsBackdrop = document.getElementById("news-backdrop");
+const newsDot = document.getElementById("news-dot");
+
+function updateNewsDot() {
+  const seen = parseInt(localStorage.getItem(NEWS_SEEN_KEY) || "0", 10);
+  newsDot.hidden = seen >= CHANGELOG[0].version;
+}
+
+function openNews() {
+  const body = document.getElementById("news-body");
+  body.innerHTML = "";
+  for (const entry of CHANGELOG) {
+    const el = document.createElement("div");
+    el.className = "news-entry";
+    const date = document.createElement("div");
+    date.className = "n-date";
+    date.textContent = entry.date;
+    const h = document.createElement("h4");
+    h.textContent = entry.title;
+    const ul = document.createElement("ul");
+    for (const item of entry.items) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      ul.appendChild(li);
+    }
+    el.append(date, h, ul);
+    body.appendChild(el);
+  }
+  localStorage.setItem(NEWS_SEEN_KEY, String(CHANGELOG[0].version));
+  updateNewsDot();
+  newsBackdrop.classList.add("open");
+}
+
+document.getElementById("btn-news").addEventListener("click", openNews);
+document.getElementById("news-close").addEventListener("click", () => newsBackdrop.classList.remove("open"));
+newsBackdrop.addEventListener("click", e => {
+  if (e.target === newsBackdrop) newsBackdrop.classList.remove("open");
+});
+updateNewsDot();
 
 /* ================= Cloud-Speicher (Supabase) ================= */
 
