@@ -895,6 +895,89 @@
     overflow-y: auto;
   }
 
+  /* ---------- Kalender (Startseite) ---------- */
+  .cal-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .cal-head h2 { margin: 0 !important; }
+  #cal-title {
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 140px;
+  }
+  .cal-nav { display: flex; gap: 6px; }
+  .cal-nav button {
+    background: var(--card-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .cal-nav button:hover { background: var(--hover); }
+  #cal-grid {
+    display: grid;
+    grid-template-columns: 44px repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-hd {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-light);
+    text-align: center;
+    padding: 4px 0;
+  }
+  .cal-kw {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    background: var(--hover-soft);
+    border-radius: 8px;
+  }
+  .cal-day {
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    min-height: 76px;
+    padding: 4px 5px;
+    overflow: hidden;
+  }
+  .cal-day .cd-num {
+    font-size: 11.5px;
+    color: var(--text-light);
+    margin-bottom: 3px;
+  }
+  .cal-day.other { opacity: .45; }
+  .cal-day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .cal-day.today .cd-num { color: var(--accent); font-weight: 700; }
+  .cal-chip {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 6px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .cal-chip:hover { filter: brightness(1.1); }
+  .cal-chip.cal-over { outline: 2px solid #e5484d; outline-offset: -2px; }
+  .cal-more { font-size: 10.5px; color: var(--text-light); }
+
   /* ---------- Archiv ---------- */
   .arch-item {
     display: flex;
@@ -1096,6 +1179,18 @@
   <div class="section">
     <h2>📌 Angepinnte Aufgaben</h2>
     <div class="pinned-list" id="pinned-list"></div>
+  </div>
+  <div class="section" id="cal-section" hidden>
+    <div class="cal-head">
+      <h2>🗓️ Kalender</h2>
+      <span id="cal-title"></span>
+      <div class="cal-nav">
+        <button id="cal-prev" title="Voriger Monat">‹</button>
+        <button id="cal-today">Heute</button>
+        <button id="cal-next" title="Nächster Monat">›</button>
+      </div>
+    </div>
+    <div id="cal-grid"></div>
   </div>
 </div>
 
@@ -1300,6 +1395,7 @@ function settings() {
   const s = state.settings;
   if (s.showDue == null) s.showDue = true;
   if (s.showTags == null) s.showTags = true;
+  if (s.showCalendar == null) s.showCalendar = true;
   if (s.autoArchive == null) s.autoArchive = false;
   return s;
 }
@@ -1608,7 +1704,133 @@ function renderHome() {
       pinnedList.appendChild(renderPinnedCard(p));
     }
   }
+
+  // --- Kalender ---
+  renderCalendar();
 }
+
+/* ---------- Kalender (Monatsübersicht mit Kalenderwochen) ---------- */
+
+let calYear = null, calMonth = null;   // angezeigter Monat (nicht gespeichert)
+
+// ISO-8601-Kalenderwoche (deutsche Zählung)
+function isoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function dateStr(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+// Alle fälligen Aufgaben über alle Boards, gruppiert nach Datum
+function collectDueTasks() {
+  const map = {};
+  for (const b of state.boards) {
+    for (const col of b.columns) {
+      for (const t of col.tasks) {
+        if (t.due) (map[t.due] = map[t.due] || []).push({ board: b, task: t });
+      }
+    }
+  }
+  return map;
+}
+
+function renderCalendar() {
+  const sec = document.getElementById("cal-section");
+  const s = settings();
+  if (!s.showDue || !s.showCalendar) { sec.hidden = true; return; }
+  sec.hidden = false;
+
+  const now = new Date();
+  if (calYear == null) { calYear = now.getFullYear(); calMonth = now.getMonth(); }
+  document.getElementById("cal-title").textContent =
+    new Date(calYear, calMonth, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+
+  const grid = document.getElementById("cal-grid");
+  grid.innerHTML = "";
+  for (const h of ["KW", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]) {
+    const hd = document.createElement("div");
+    hd.className = "cal-hd";
+    hd.textContent = h;
+    grid.appendChild(hd);
+  }
+
+  const first = new Date(calYear, calMonth, 1);
+  const startOffset = (first.getDay() + 6) % 7;      // Montag = 0
+  const start = new Date(calYear, calMonth, 1 - startOffset);
+  const dueMap = collectDueTasks();
+  const todayS = todayStr();
+
+  for (let w = 0; w < 6; w++) {
+    const weekStart = new Date(start);
+    weekStart.setDate(start.getDate() + w * 7);
+    if (w && weekStart.getMonth() !== calMonth && weekStart.getFullYear() * 12 + weekStart.getMonth() > calYear * 12 + calMonth) break;
+
+    const kw = document.createElement("div");
+    kw.className = "cal-kw";
+    kw.textContent = isoWeek(weekStart);
+    kw.title = "Kalenderwoche " + isoWeek(weekStart);
+    grid.appendChild(kw);
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      const ds = dateStr(d);
+
+      const cell = document.createElement("div");
+      cell.className = "cal-day";
+      if (d.getMonth() !== calMonth) cell.classList.add("other");
+      if (ds === todayS) cell.classList.add("today");
+
+      const num = document.createElement("div");
+      num.className = "cd-num";
+      num.textContent = d.getDate();
+      cell.appendChild(num);
+
+      const entries = dueMap[ds] || [];
+      const MAX = 3;
+      for (const entry of entries.slice(0, MAX)) {
+        const chip = document.createElement("span");
+        chip.className = "cal-chip" + (ds < todayS ? " cal-over" : "");
+        chip.style.background = entry.board.color;
+        chip.textContent = entry.task.title;
+        chip.title = entry.task.title + "  (" + entry.board.name + (ds < todayS ? ", überfällig" : "") + ")";
+        chip.addEventListener("click", () => {
+          openBoard(entry.board.id);
+          openModal(entry.task.id);
+        });
+        cell.appendChild(chip);
+      }
+      if (entries.length > MAX) {
+        const more = document.createElement("span");
+        more.className = "cal-more";
+        more.textContent = "+" + (entries.length - MAX) + " weitere";
+        more.title = entries.slice(MAX).map(e => e.task.title).join("\n");
+        cell.appendChild(more);
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+document.getElementById("cal-prev").addEventListener("click", () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById("cal-next").addEventListener("click", () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+document.getElementById("cal-today").addEventListener("click", () => {
+  calYear = null; calMonth = null;
+  renderCalendar();
+});
 
 function renderBoardTile(board) {
   const tile = document.createElement("div");
@@ -2823,6 +3045,7 @@ function openOptionsMenu(anchor) {
   };
 
   mkToggle("📅 Fälligkeitsdaten", "showDue");
+  mkToggle("🗓️ Kalender auf der Startseite", "showCalendar");
   mkToggle("🏷️ Tags", "showTags");
   mkToggle("🗄️ Automatisch archivieren", "autoArchive",
     "Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen, wandern ins Archiv.",
@@ -2994,6 +3217,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 7, date: "14.08.2026", title: "Kalender auf der Startseite", items: [
+    "🗓️ Monatsübersicht mit Kalenderwochen: alle fälligen Aufgaben aus allen Boards auf einen Blick – heute ist markiert, Überfälliges ist rot umrandet.",
+    "Klick auf eine Aufgabe im Kalender öffnet sie direkt; mit ‹ › blätterst du durch die Monate.",
+    "Im ⚙️-Menü lässt sich der Kalender ein- und ausblenden."
+  ]},
   { version: 6, date: "14.08.2026", title: "Fälligkeit, Tags & Archiv", items: [
     "📅 Fälligkeitsdatum je Aufgabe – auf der Karte farbig markiert (orange = heute, rot = überfällig).",
     "🏷️ Tags mit Farben: im Aufgabenfenster anlegen und zuweisen, auf den Karten als Chips sichtbar.",
