@@ -441,11 +441,12 @@
   }
 
   /* ---------- Add column ---------- */
-  #add-col {
+  #add-col, .ghost-col {
     min-width: 260px;
     padding: 10px;
   }
-  #add-col button {
+  .ghost-col { min-width: 180px; }
+  #add-col button, .ghost-col button {
     background: var(--glass-strong);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
@@ -459,7 +460,7 @@
     box-shadow: var(--shadow);
     transition: background .12s, transform .12s;
   }
-  #add-col button:hover { background: var(--btn-hover); transform: translateY(-1px); }
+  #add-col button:hover, .ghost-col button:hover { background: var(--btn-hover); transform: translateY(-1px); }
   #add-col input {
     border: 2px solid var(--accent);
     border-radius: 6px;
@@ -479,7 +480,7 @@
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     padding: 6px 0;
-    z-index: 100;
+    z-index: 300;
     min-width: 180px;
     font-size: 13.5px;
     overflow: hidden;
@@ -856,7 +857,7 @@
     background: #ef5350;
     box-shadow: 0 0 0 2px var(--card-bg);
   }
-  #news-backdrop {
+  #news-backdrop, #archive-backdrop {
     position: fixed; inset: 0;
     background: rgba(25,35,50,.35);
     backdrop-filter: blur(6px);
@@ -867,8 +868,8 @@
     padding: 8vh 16px;
     z-index: 250;
   }
-  #news-backdrop.open { display: flex; }
-  #news-modal {
+  #news-backdrop.open, #archive-backdrop.open { display: flex; }
+  #news-modal, #archive-modal {
     background: var(--modal-bg);
     border-radius: 18px;
     border: 1px solid var(--edge);
@@ -880,18 +881,175 @@
     box-shadow: var(--shadow-lg);
     overflow: hidden;
   }
-  #news-modal .n-head {
+  #archive-modal { width: 560px; }
+  #news-modal .n-head, #archive-modal .n-head {
     padding: 16px 22px;
     border-bottom: 1px solid var(--border-soft);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  #news-modal .n-head h2 { font-size: 17px; }
-  #news-modal .n-body {
+  #news-modal .n-head h2, #archive-modal .n-head h2 { font-size: 17px; }
+  #news-modal .n-body, #archive-modal .n-body {
     padding: 4px 22px 20px;
     overflow-y: auto;
   }
+
+  /* ---------- Archiv ---------- */
+  .arch-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+    background: var(--hover-soft);
+  }
+  .arch-item .a-info { flex: 1; min-width: 0; }
+  .arch-item .a-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .arch-item .a-meta { font-size: 11.5px; color: var(--text-light); }
+  .arch-item button {
+    background: none;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .arch-item button:hover { background: var(--hover); }
+  .arch-item button.a-del { border-color: #f0c4c4; color: #d64545; }
+  .arch-empty { color: var(--text-light); font-size: 13.5px; margin-top: 14px; }
+
+  /* ---------- Fälligkeit & Tags ---------- */
+  .m-props {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 4px;
+  }
+  .m-props > div { min-width: 150px; }
+  #m-due {
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 6px 9px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+  }
+  #m-due:focus { border-color: var(--accent); }
+  #m-due-clear {
+    background: none; border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px;
+  }
+  #m-due-clear:hover { color: #d64545; }
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin: 0 6px 6px 0;
+    max-width: 160px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tag-chip .tc-x {
+    cursor: pointer;
+    opacity: .7;
+    font-weight: 700;
+  }
+  .tag-chip .tc-x:hover { opacity: 1; }
+  #m-tag-add {
+    background: none;
+    border: 1px dashed var(--input-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    color: var(--text-light);
+    cursor: pointer;
+  }
+  #m-tag-add:hover { background: var(--hover); color: var(--text); }
+  .dropdown .tag-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .dropdown .item .tag-tools {
+    margin-left: auto;
+    visibility: hidden;
+    display: flex;
+    gap: 2px;
+  }
+  .dropdown .item:hover .tag-tools { visibility: visible; }
+  .dropdown .item .tag-tools button {
+    background: none; border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 3px;
+    color: var(--text-light);
+  }
+
+  /* Karten: Fälligkeit + Tags */
+  .card .card-tags { margin-top: 6px; line-height: 1; }
+  .card .card-tags .tag-chip { padding: 2px 8px; font-size: 10.5px; margin: 0 4px 4px 0; }
+  .due-badge {
+    font-size: 11.5px;
+    border-radius: 6px;
+    padding: 1px 6px;
+    background: var(--hover-soft);
+  }
+  .due-badge.due-today { background: #ffe4c2; color: #9a5b00; font-weight: 600; }
+  .due-badge.due-over { background: #ffd9d6; color: #b3261e; font-weight: 600; }
+  body.dark .due-badge.due-today { background: #4a3517; color: #ffc069; }
+  body.dark .due-badge.due-over { background: #4a1f1c; color: #ff8a80; }
+
+  /* Abschließen-Button im Aufgabenfenster */
+  #m-complete {
+    background: none;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 3px 11px;
+    margin-top: 1px;
+    line-height: 1.7;
+    color: #1e8e4e;
+    border-color: #a8d8bc;
+    white-space: nowrap;
+  }
+  #m-complete:hover { background: #ecf8f0; }
+  body.dark #m-complete { border-color: #2e5c42; }
+  body.dark #m-complete:hover { background: rgba(46,160,92,.15); }
+
+  /* Optionen-Menü */
+  .dropdown .opt-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+  .dropdown .opt-row:hover { background: var(--hover-soft); }
+  .dropdown .opt-row input { accent-color: var(--accent); cursor: pointer; }
+  .dropdown .opt-hint { font-size: 11px; color: var(--text-light); padding: 0 10px 6px; max-width: 240px; white-space: normal; }
   .news-entry { margin-top: 16px; }
   .news-entry .n-date { font-size: 11.5px; color: var(--text-light); }
   .news-entry h4 { font-size: 14px; margin: 2px 0 6px; }
@@ -920,6 +1078,7 @@
   <button id="btn-logout" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
   <button id="btn-news" title="Was ist neu?">✨ Neu<span id="news-dot" hidden></span></button>
   <button id="btn-theme" title="Dunklen/hellen Modus umschalten">🌙</button>
+  <button id="btn-options" title="Optionen: Funktionen ein-/ausschalten">⚙️</button>
   <button id="btn-bg" title="Hintergrund ändern">🎨 Hintergrund</button>
   <button id="btn-export" title="Alle Boards als Datei sichern">Export</button>
   <button id="btn-import" title="Boards aus Datei laden">Import</button>
@@ -972,15 +1131,37 @@
   </div>
 </div>
 
+<div id="archive-backdrop">
+  <div id="archive-modal">
+    <div class="n-head">
+      <h2>🗄️ Archiv</h2>
+      <button class="m-close" id="archive-close" title="Schließen">&times;</button>
+    </div>
+    <div class="n-body" id="archive-body"></div>
+  </div>
+</div>
+
 <div id="modal-backdrop">
   <div id="modal">
     <div class="m-head">
       <span class="m-col-badge" id="m-col-badge"></span>
       <textarea id="m-title" rows="1" spellcheck="false"></textarea>
+      <button id="m-complete" title="Aufgabe abschließen und ins Archiv verschieben">✓ Abschließen</button>
       <button id="m-pin" title="Auf Startseite pinnen">📌</button>
       <button class="m-close" id="m-close" title="Schließen">&times;</button>
     </div>
     <div class="m-body">
+      <div class="m-props">
+        <div id="m-due-wrap">
+          <h3>Fälligkeit</h3>
+          <input type="date" id="m-due">
+          <button id="m-due-clear" title="Fälligkeit entfernen" hidden>✕</button>
+        </div>
+        <div id="m-tags-wrap">
+          <h3>Tags</h3>
+          <div id="m-tags"></div>
+        </div>
+      </div>
       <h3>Beschreibung</h3>
       <textarea id="m-desc" placeholder="Beschreibung hinzufügen…"></textarea>
       <h3>Checkliste <span class="check-progress" id="m-check-progress"></span></h3>
@@ -1111,6 +1292,53 @@ function findTask(taskId, board) {
 
 function taskCount(board) {
   return board.columns.reduce((n, c) => n + c.tasks.length, 0);
+}
+
+// Einstellungen mit Standardwerten (synchronisieren mit in die Cloud)
+function settings() {
+  if (!state.settings) state.settings = {};
+  const s = state.settings;
+  if (s.showDue == null) s.showDue = true;
+  if (s.showTags == null) s.showTags = true;
+  if (s.autoArchive == null) s.autoArchive = false;
+  return s;
+}
+
+// "Zuletzt geändert" der Aufgabe aktualisieren (und Fußzeile im offenen Fenster mitziehen)
+function touch(task) {
+  task.updatedAt = Date.now();
+  if (typeof modalTaskId !== "undefined" && modalTaskId === task.id) {
+    mCreated.textContent = "Erstellt am " + formatDate(task.createdAt) +
+      " · Geändert am " + formatDate(task.updatedAt);
+  }
+}
+
+// Heutiges Datum als "JJJJ-MM-TT" (lokale Zeitzone)
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+// Fälligkeit "JJJJ-MM-TT" als "TT.MM." bzw. mit Jahr, wenn nicht aktuelles Jahr
+function formatDue(due) {
+  const [y, m, d] = due.split("-");
+  return y === String(new Date().getFullYear()) ? `${d}.${m}.` : `${d}.${m}.${y.slice(2)}`;
+}
+
+function dueClass(due) {
+  const t = todayStr();
+  if (due < t) return " due-over";
+  if (due === t) return " due-today";
+  return "";
+}
+
+// Badge "📅 …" für Karten (Board + Startseite)
+function makeDueBadge(task) {
+  const d = document.createElement("span");
+  d.className = "due-badge" + dueClass(task.due);
+  d.textContent = "📅 " + formatDue(task.due);
+  d.title = "Fällig am " + task.due.split("-").reverse().join(".");
+  return d;
 }
 
 /* ================= Hintergrund der Startseite ================= */
@@ -1529,6 +1757,9 @@ function renderPinnedCard(p) {
   const boardName = document.createElement("span");
   boardName.textContent = p.board.name;
   meta.append(badge, boardName);
+  if (settings().showDue && p.task.due) {
+    meta.appendChild(makeDueBadge(p.task));
+  }
   if (p.task.checklist && p.task.checklist.length) {
     const cl = document.createElement("span");
     const done = p.task.checklist.filter(i => i.done).length;
@@ -1617,6 +1848,19 @@ function renderBoard(board) {
     boardEl.appendChild(renderColumn(board, col));
   }
   boardEl.appendChild(renderAddColumn(board));
+
+  // Archiv-Zugang (nur zeigen, wenn etwas drin ist)
+  const n = (board.archive || []).length;
+  if (n) {
+    const wrap = document.createElement("div");
+    wrap.className = "ghost-col";
+    const btn = document.createElement("button");
+    btn.textContent = `🗄️ Archiv (${n})`;
+    btn.title = "Abgeschlossene Aufgaben ansehen";
+    btn.addEventListener("click", () => openArchive(board));
+    wrap.appendChild(btn);
+    boardEl.appendChild(wrap);
+  }
 }
 
 function renderColumn(board, col) {
@@ -1740,7 +1984,7 @@ function renderCard(task) {
     t.contentEditable = "false";
     card.draggable = true;
     const v = t.textContent.trim();
-    if (v && v !== task.title) { task.title = v; save(); }
+    if (v && v !== task.title) { task.title = v; touch(task); save(); }
     t.textContent = task.title;
   });
   t.addEventListener("keydown", e => {
@@ -1752,8 +1996,28 @@ function renderCard(task) {
     if (t.isContentEditable) e.stopPropagation();
   });
 
+  // Tags als farbige Chips
+  if (settings().showTags && task.tagIds && task.tagIds.length) {
+    const board = currentBoard();
+    const tagsEl = document.createElement("div");
+    tagsEl.className = "card-tags";
+    for (const id of task.tagIds) {
+      const tag = board && boardTag(board, id);
+      if (!tag) continue;
+      const chip = document.createElement("span");
+      chip.className = "tag-chip";
+      chip.style.background = tag.color;
+      chip.textContent = tag.name;
+      tagsEl.appendChild(chip);
+    }
+    if (tagsEl.childElementCount) card.appendChild(tagsEl);
+  }
+
   const meta = document.createElement("div");
   meta.className = "card-meta";
+  if (settings().showDue && task.due) {
+    meta.appendChild(makeDueBadge(task));
+  }
   if (task.pinned) {
     const p = document.createElement("span");
     p.textContent = "📌";
@@ -1941,6 +2205,7 @@ function onColumnDrop(e, colEl, board, col) {
     if (src.col === col && srcIndex < index) index--;
     index = Math.max(0, Math.min(index, col.tasks.length));
     col.tasks.splice(index, 0, src.task);
+    if (src.col !== col) touch(src.task);
     render();
   } else if (dragType === "col" && dragColId && dragColId !== col.id) {
     const from = board.columns.findIndex(c => c.id === dragColId);
@@ -2047,8 +2312,11 @@ function openModal(taskId) {
   mColBadge.style.background = col.color;
   mTitle.value = task.title;
   mDesc.value = task.description || "";
-  mCreated.textContent = "Erstellt am " + formatDate(task.createdAt);
+  mCreated.textContent = "Erstellt am " + formatDate(task.createdAt) +
+    (task.updatedAt ? " · Geändert am " + formatDate(task.updatedAt) : "");
   updatePinButton(task);
+  renderDue(task);
+  renderTags(task);
   renderChecklist(task);
   mCheckInput.value = "";
   renderLinks(task);
@@ -2088,6 +2356,7 @@ mPin.addEventListener("click", () => {
   const task = currentTask();
   if (!task) return;
   task.pinned = !task.pinned;
+  touch(task);
   save();
   updatePinButton(task);
 });
@@ -2117,6 +2386,7 @@ function renderChecklist(task) {
     cb.checked = item.done;
     cb.addEventListener("change", () => {
       item.done = cb.checked;
+      touch(task);
       save();
       renderChecklist(task);
     });
@@ -2130,6 +2400,7 @@ function renderChecklist(task) {
     del.textContent = "Löschen";
     del.addEventListener("click", () => {
       task.checklist = task.checklist.filter(x => x !== item);
+      touch(task);
       save();
       renderChecklist(task);
     });
@@ -2146,6 +2417,7 @@ function addChecklistItem() {
   if (!v) return;
   (task.checklist = task.checklist || []).push({ id: uid(), text: v, done: false });
   mCheckInput.value = "";
+  touch(task);
   save();
   renderChecklist(task);
   mCheckInput.focus();
@@ -2223,6 +2495,7 @@ function renderLinks(task) {
     del.textContent = "Löschen";
     del.addEventListener("click", () => {
       task.links = task.links.filter(x => x !== link);
+      touch(task);
       save();
       renderLinks(task);
     });
@@ -2245,6 +2518,7 @@ function addLink() {
   }
   (task.links = task.links || []).push({ id: uid(), url: v });
   mLinkInput.value = "";
+  touch(task);
   save();
   renderLinks(task);
   mLinkInput.focus();
@@ -2253,6 +2527,320 @@ function addLink() {
 document.getElementById("m-link-add").addEventListener("click", addLink);
 mLinkInput.addEventListener("keydown", e => {
   if (e.key === "Enter") addLink();
+});
+
+/* ---------- Fälligkeit ---------- */
+
+const mDueWrap = document.getElementById("m-due-wrap");
+const mDue = document.getElementById("m-due");
+const mDueClear = document.getElementById("m-due-clear");
+
+function renderDue(task) {
+  mDueWrap.hidden = !settings().showDue;
+  mDue.value = task.due || "";
+  mDueClear.hidden = !task.due;
+}
+
+mDue.addEventListener("change", () => {
+  const task = currentTask();
+  if (!task) return;
+  task.due = mDue.value || null;
+  touch(task);
+  save();
+  mDueClear.hidden = !task.due;
+});
+
+mDueClear.addEventListener("click", () => {
+  const task = currentTask();
+  if (!task) return;
+  task.due = null;
+  mDue.value = "";
+  mDueClear.hidden = true;
+  touch(task);
+  save();
+});
+
+/* ---------- Tags ---------- */
+
+const mTagsWrap = document.getElementById("m-tags-wrap");
+const mTagsEl = document.getElementById("m-tags");
+
+function boardTag(board, tagId) {
+  return (board.tags || []).find(t => t.id === tagId);
+}
+
+function renderTags(task) {
+  mTagsWrap.hidden = !settings().showTags;
+  mTagsEl.innerHTML = "";
+  const f = modalTaskId ? findTask(modalTaskId) : null;
+  if (!f) return;
+  const board = f.board;
+  task.tagIds = (task.tagIds || []).filter(id => boardTag(board, id));
+
+  for (const id of task.tagIds) {
+    const tag = boardTag(board, id);
+    const chip = document.createElement("span");
+    chip.className = "tag-chip";
+    chip.style.background = tag.color;
+    chip.append(document.createTextNode(tag.name));
+    const x = document.createElement("span");
+    x.className = "tc-x";
+    x.textContent = "×";
+    x.title = "Tag von dieser Aufgabe entfernen";
+    x.addEventListener("click", () => {
+      task.tagIds = task.tagIds.filter(t => t !== id);
+      touch(task);
+      save();
+      renderTags(task);
+    });
+    chip.appendChild(x);
+    mTagsEl.appendChild(chip);
+  }
+
+  const add = document.createElement("button");
+  add.id = "m-tag-add";
+  add.textContent = "+ Tag";
+  add.addEventListener("click", e => {
+    e.stopPropagation();
+    openTagMenu(board, task, add);
+  });
+  mTagsEl.appendChild(add);
+}
+
+function openTagMenu(board, task, anchor) {
+  closeDropdown();
+  const dd = document.createElement("div");
+  dd.className = "dropdown";
+  dd.addEventListener("click", e => e.stopPropagation());
+  board.tags = board.tags || [];
+
+  for (const tag of board.tags) {
+    const it = document.createElement("div");
+    it.className = "item";
+    const dot = document.createElement("span");
+    dot.className = "tag-dot";
+    dot.style.background = tag.color;
+    const assigned = (task.tagIds || []).includes(tag.id);
+    it.append(dot, document.createTextNode(tag.name + (assigned ? " ✓" : "")));
+
+    const tools = document.createElement("span");
+    tools.className = "tag-tools";
+    const ren = document.createElement("button");
+    ren.textContent = "✏️";
+    ren.title = "Tag umbenennen";
+    ren.addEventListener("click", e => {
+      e.stopPropagation();
+      const v = prompt("Neuer Name für den Tag:", tag.name);
+      if (v && v.trim()) { tag.name = v.trim(); save(); render(); renderTags(task); openTagMenu(board, task, anchor); }
+    });
+    const del = document.createElement("button");
+    del.textContent = "🗑️";
+    del.title = "Tag komplett löschen (von allen Aufgaben)";
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      if (!confirm(`Tag "${tag.name}" löschen? Er wird von allen Aufgaben dieses Boards entfernt.`)) return;
+      board.tags = board.tags.filter(t => t !== tag);
+      for (const col of board.columns) for (const t of col.tasks) {
+        if (t.tagIds) t.tagIds = t.tagIds.filter(id => id !== tag.id);
+      }
+      for (const a of board.archive || []) {
+        if (a.task.tagIds) a.task.tagIds = a.task.tagIds.filter(id => id !== tag.id);
+      }
+      save(); render(); renderTags(task); openTagMenu(board, task, anchor);
+    });
+    tools.append(ren, del);
+    it.appendChild(tools);
+
+    it.addEventListener("click", () => {
+      task.tagIds = task.tagIds || [];
+      if (task.tagIds.includes(tag.id)) task.tagIds = task.tagIds.filter(id => id !== tag.id);
+      else task.tagIds.push(tag.id);
+      touch(task);
+      save();
+      renderTags(task);
+      openTagMenu(board, task, anchor);
+    });
+    dd.appendChild(it);
+  }
+
+  if (board.tags.length) {
+    const sep = document.createElement("div");
+    sep.className = "sep";
+    dd.appendChild(sep);
+  }
+  const create = document.createElement("div");
+  create.className = "item";
+  create.textContent = "＋ Neuen Tag erstellen…";
+  create.addEventListener("click", () => {
+    const v = prompt("Name des neuen Tags:");
+    if (!v || !v.trim()) return;
+    const tag = { id: uid(), name: v.trim(), color: COLORS[board.tags.length % COLORS.length] };
+    board.tags.push(tag);
+    (task.tagIds = task.tagIds || []).push(tag.id);
+    touch(task);
+    save();
+    renderTags(task);
+    openTagMenu(board, task, anchor);
+  });
+  dd.appendChild(create);
+
+  document.body.appendChild(dd);
+  const r = anchor.getBoundingClientRect();
+  dd.style.top = (r.bottom + 6) + "px";
+  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
+  openDropdown = dd;
+}
+
+/* ---------- Abschließen & Archiv ---------- */
+
+const archiveBackdrop = document.getElementById("archive-backdrop");
+const archiveBody = document.getElementById("archive-body");
+
+function archiveTask(board, col, task) {
+  const i = col.tasks.indexOf(task);
+  if (i >= 0) col.tasks.splice(i, 1);
+  task.pinned = false;
+  (board.archive = board.archive || []).push({ task, colName: col.name, archivedAt: Date.now() });
+}
+
+document.getElementById("m-complete").addEventListener("click", () => {
+  const f = modalTaskId ? findTask(modalTaskId) : null;
+  if (!f) return;
+  archiveTask(f.board, f.col, f.task);
+  save();
+  closeModal();
+});
+
+function openArchive(board) {
+  archiveBody.innerHTML = "";
+  const entries = [...(board.archive || [])].sort((a, b) => b.archivedAt - a.archivedAt);
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "arch-empty";
+    empty.textContent = "Das Archiv ist leer. Abgeschlossene Aufgaben (✓ im Aufgabenfenster) landen hier.";
+    archiveBody.appendChild(empty);
+  }
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "arch-item";
+
+    const info = document.createElement("div");
+    info.className = "a-info";
+    const t = document.createElement("div");
+    t.className = "a-title";
+    t.textContent = entry.task.title;
+    const m = document.createElement("div");
+    m.className = "a-meta";
+    m.textContent = `aus „${entry.colName}“ · archiviert am ${formatDate(entry.archivedAt)}`;
+    info.append(t, m);
+
+    const restore = document.createElement("button");
+    restore.textContent = "Wiederherstellen";
+    restore.addEventListener("click", () => {
+      board.archive = board.archive.filter(x => x !== entry);
+      let col = board.columns.find(c => c.name === entry.colName) || board.columns[0];
+      if (!col) {
+        col = { id: uid(), name: entry.colName, color: COLORS[0], tasks: [] };
+        board.columns.push(col);
+      }
+      col.tasks.push(entry.task);
+      touch(entry.task);
+      save();
+      render();
+      openArchive(board);
+    });
+
+    const del = document.createElement("button");
+    del.className = "a-del";
+    del.textContent = "Löschen";
+    del.title = "Endgültig löschen";
+    del.addEventListener("click", () => {
+      if (!confirm(`"${entry.task.title}" endgültig löschen?`)) return;
+      board.archive = board.archive.filter(x => x !== entry);
+      save();
+      render();
+      openArchive(board);
+    });
+
+    row.append(info, restore, del);
+    archiveBody.appendChild(row);
+  }
+  archiveBackdrop.classList.add("open");
+}
+
+document.getElementById("archive-close").addEventListener("click", () => archiveBackdrop.classList.remove("open"));
+archiveBackdrop.addEventListener("click", e => {
+  if (e.target === archiveBackdrop) archiveBackdrop.classList.remove("open");
+});
+
+// Auto-Archiv: Aufgaben, die seit 14 Tagen unverändert in einer "Erledigt"-Spalte liegen
+function runAutoArchive() {
+  if (!settings().autoArchive) return 0;
+  const limit = Date.now() - 14 * 24 * 3600 * 1000;
+  let n = 0;
+  for (const board of state.boards) {
+    for (const col of board.columns) {
+      if (!/erledigt|fertig|abgeschlossen|done/i.test(col.name)) continue;
+      for (const task of [...col.tasks]) {
+        const ts = task.updatedAt || task.createdAt || 0;
+        if (ts && ts < limit) { archiveTask(board, col, task); n++; }
+      }
+    }
+  }
+  if (n) save();
+  return n;
+}
+
+/* ---------- Optionen ---------- */
+
+function openOptionsMenu(anchor) {
+  closeDropdown();
+  const dd = document.createElement("div");
+  dd.className = "dropdown";
+  dd.addEventListener("click", e => e.stopPropagation());
+  const s = settings();
+
+  const mkToggle = (label, key, hint, onEnable) => {
+    const row = document.createElement("label");
+    row.className = "opt-row";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!s[key];
+    cb.addEventListener("change", () => {
+      s[key] = cb.checked;
+      save();
+      render();
+      if (cb.checked && onEnable) onEnable();
+    });
+    row.append(cb, document.createTextNode(label));
+    dd.appendChild(row);
+    if (hint) {
+      const h = document.createElement("div");
+      h.className = "opt-hint";
+      h.textContent = hint;
+      dd.appendChild(h);
+    }
+  };
+
+  mkToggle("📅 Fälligkeitsdaten", "showDue");
+  mkToggle("🏷️ Tags", "showTags");
+  mkToggle("🗄️ Automatisch archivieren", "autoArchive",
+    "Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen, wandern ins Archiv.",
+    () => {
+      const n = runAutoArchive();
+      if (n) render();
+    });
+
+  document.body.appendChild(dd);
+  const r = anchor.getBoundingClientRect();
+  dd.style.top = (r.bottom + 6) + "px";
+  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
+  openDropdown = dd;
+}
+
+document.getElementById("btn-options").addEventListener("click", e => {
+  e.stopPropagation();
+  openOptionsMenu(e.currentTarget);
 });
 
 /* ---------- Kommentare ---------- */
@@ -2300,6 +2888,7 @@ function addComment() {
   if (!v) return;
   task.comments.push({ id: uid(), text: v, ts: Date.now() });
   mCommentInput.value = "";
+  touch(task);
   save();
   renderComments(task);
   mComments.parentElement.scrollTop = mComments.parentElement.scrollHeight;
@@ -2313,14 +2902,14 @@ mCommentInput.addEventListener("keydown", e => {
 mTitle.addEventListener("input", () => {
   autosize(mTitle);
   const task = currentTask();
-  if (task) { task.title = mTitle.value.trim() || task.title; save(); }
+  if (task) { task.title = mTitle.value.trim() || task.title; touch(task); save(); }
 });
 mTitle.addEventListener("keydown", e => {
   if (e.key === "Enter") { e.preventDefault(); mTitle.blur(); }
 });
 mDesc.addEventListener("input", () => {
   const task = currentTask();
-  if (task) { task.description = mDesc.value; save(); }
+  if (task) { task.description = mDesc.value; touch(task); save(); }
 });
 
 document.getElementById("m-close").addEventListener("click", closeModal);
@@ -2331,6 +2920,7 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   const newsBd = document.getElementById("news-backdrop");
   if (newsBd.classList.contains("open")) { newsBd.classList.remove("open"); return; }
+  if (archiveBackdrop.classList.contains("open")) { archiveBackdrop.classList.remove("open"); return; }
   if (backdrop.classList.contains("open")) closeModal();
 });
 document.getElementById("m-delete").addEventListener("click", () => {
@@ -2404,6 +2994,14 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 6, date: "14.08.2026", title: "Fälligkeit, Tags & Archiv", items: [
+    "📅 Fälligkeitsdatum je Aufgabe – auf der Karte farbig markiert (orange = heute, rot = überfällig).",
+    "🏷️ Tags mit Farben: im Aufgabenfenster anlegen und zuweisen, auf den Karten als Chips sichtbar.",
+    "✓ Aufgaben abschließen: der Haken oben im Aufgabenfenster verschiebt sie ins Archiv des Boards – dort wiederherstellen oder endgültig löschen.",
+    "🗄️ Optional: Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen, automatisch archivieren (im ⚙️-Menü einschaltbar).",
+    "⚙️ Neues Optionen-Menü oben rechts: Fälligkeit, Tags und Auto-Archiv ein-/ausschalten.",
+    "🕒 Aufgaben zeigen jetzt auch, wann sie zuletzt geändert wurden."
+  ]},
   { version: 5, date: "14.08.2026", title: "Verknüpfungen & eigene Domain", items: [
     "🔗 Verknüpfungen an Aufgaben: Web- und OneDrive-Links (in OneDrive „Link kopieren“ wählen) werden anklickbar, Dateipfade wie C:\\… oder \\\\Server\\… lassen sich per Klick kopieren.",
     "Karten zeigen ein 🔗-Symbol, wenn Verknüpfungen vorhanden sind.",
@@ -2652,6 +3250,7 @@ async function onLoggedIn(user) {
 /* ================= Start ================= */
 
 async function initApp() {
+  if (runAutoArchive()) { /* abgelaufene Erledigt-Aufgaben direkt wegräumen */ }
   render();
   if (!sb) {
     setCloudStatus("nur lokal", "Cloud-Funktion nicht verfügbar (kein Internet?)");
