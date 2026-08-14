@@ -993,12 +993,12 @@ let state = load();
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return migrateBgImage(JSON.parse(raw));
     // Migration: altes Ein-Board-Format übernehmen
     const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
     if (oldRaw) {
       const old = JSON.parse(oldRaw);
-      return {
+      return migrateBgImage({
         boards: [{
           id: uid(),
           name: old.title || "Mein Board",
@@ -1006,15 +1006,33 @@ function load() {
           columns: old.columns || []
         }],
         currentBoardId: null
-      };
+      });
     }
   } catch (e) { console.error("Laden fehlgeschlagen", e); }
   // Startzustand
-  return { boards: [], currentBoardId: null };
+  return migrateBgImage({ boards: [], currentBoardId: null });
+}
+
+// Migration: Hintergrundbild aus dem alten separaten Speicher in den
+// synchronisierten Zustand übernehmen (damit es mit in die Cloud wandert)
+function migrateBgImage(st) {
+  try {
+    const oldImg = localStorage.getItem("kanban-custom-bg-image");
+    if (oldImg) {
+      if (!st.bgImage) st.bgImage = oldImg;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+      localStorage.removeItem("kanban-custom-bg-image");
+    }
+  } catch (e) { /* Speicher gesperrt – ohne Migration weiter */ }
+  return st;
 }
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error("Lokales Speichern fehlgeschlagen", e);
+  }
   scheduleCloudSave();
 }
 
@@ -1075,7 +1093,6 @@ const BG_THEMES = [
     bg: "radial-gradient(900px 500px at 80% -10%, rgba(120,160,255,.25), transparent 60%), linear-gradient(135deg, #243949, #0d1b2a)" }
 ];
 
-const BG_IMG_KEY = "kanban-custom-bg-image";
 const customBgEl = document.getElementById("custom-bg");
 
 function applyTheme() {
@@ -1089,7 +1106,7 @@ function applyTheme() {
 function applyBg() {
   applyTheme();
   if (state.homeBg === "eigenes") {
-    const img = localStorage.getItem(BG_IMG_KEY);
+    const img = state.bgImage;
     if (img) {
       document.body.style.background = "var(--bg)";
       customBgEl.hidden = false;
@@ -1128,12 +1145,11 @@ bgFile.addEventListener("change", () => {
       canvas.height = Math.round(img.height * f);
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", .85);
-      try {
-        localStorage.setItem(BG_IMG_KEY, dataUrl);
-      } catch (e) {
-        alert("Das Bild ist zu groß für den Browser-Speicher. Bitte ein kleineres Bild wählen.");
+      if (dataUrl.length > 3_000_000) {
+        alert("Das Bild ist zu groß für den Speicher. Bitte ein kleineres Bild wählen.");
         return;
       }
+      state.bgImage = dataUrl;
       state.homeBg = "eigenes";
       if (state.bgBlur == null) state.bgBlur = 0;
       if (state.bgOpacity == null) state.bgOpacity = 100;
@@ -1195,7 +1211,7 @@ function openBgMenu(anchor) {
     dd.appendChild(row);
   };
 
-  const hasImg = !!localStorage.getItem(BG_IMG_KEY);
+  const hasImg = !!state.bgImage;
   mkItem("🖼️ " + (hasImg ? "Anderes Bild hochladen…" : "Eigenes Bild hochladen…"), () => {
     closeDropdown();
     bgFile.click();
@@ -1220,7 +1236,7 @@ function openBgMenu(anchor) {
       });
     }
     mkItem("Eigenes Bild entfernen", () => {
-      localStorage.removeItem(BG_IMG_KEY);
+      state.bgImage = null;
       if (state.homeBg === "eigenes") state.homeBg = "ozean";
       save();
       applyBg();
@@ -2240,6 +2256,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 4, date: "14.08.2026", title: "Hintergrundbild in der Cloud", items: [
+    "🖼️ Dein eigenes Hintergrundbild wird jetzt mit deinem Konto in der Cloud gespeichert – es bleibt nach An- und Abmeldung erhalten und erscheint auch auf anderen Geräten.",
+    "🎨 Auch Unschärfe, Transparenz und der dunkle Modus wandern mit."
+  ]},
   { version: 3, date: "13.08.2026", title: "Personalisierung", items: [
     "🌙 Dunkler Modus – über den Mond/Sonne-Schalter oben rechts umschalten.",
     "🖼️ Eigenes Hintergrundbild hochladen (Menü „Hintergrund“) – mit Reglern für Unschärfe und Transparenz.",
@@ -2454,10 +2474,20 @@ async function onLoggedIn(user) {
   }
   if (data) {
     // Cloud-Stand übernehmen
+    const localBgImage = state.bgImage;
+    const localHomeBg = state.homeBg;
     state = data.state;
     lastSyncedAt = data.updated_at;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    setCloudStatus("☁️ gespeichert", "Alle Änderungen sind in der Cloud");
+    // Lokal eingestelltes Hintergrundbild nicht verlieren, wenn die Cloud noch keines kennt
+    if (localBgImage && !state.bgImage) {
+      state.bgImage = localBgImage;
+      if (localHomeBg === "eigenes") state.homeBg = "eigenes";
+      scheduleCloudSave();
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { console.error("Lokales Speichern fehlgeschlagen", e); }
+    if (!cloudDirty) setCloudStatus("☁️ gespeichert", "Alle Änderungen sind in der Cloud");
   } else {
     // Erste Anmeldung: vorhandene lokale Boards in die Cloud übernehmen
     cloudDirty = true;
