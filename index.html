@@ -144,7 +144,27 @@
     display: none;
     background: transparent;
   }
-  #home.active { display: block; }
+  #home.active { display: flex; }
+  #home {
+    gap: 24px;
+    align-items: flex-start;
+  }
+  #home-main { flex: 1; min-width: 0; }
+  #home-side {
+    width: 420px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+  }
+  #home-side:empty { display: none; }
+  #home-side .section { max-width: none; }
+  #home-side .pinned-list { grid-template-columns: 1fr; }
+  #home-side .cal-day { min-height: 58px; padding: 3px 4px; }
+  #home-side #cal-grid { grid-template-columns: 34px repeat(7, 1fr); gap: 3px; }
+  @media (max-width: 1100px) {
+    #home.active { flex-direction: column; }
+    #home-side { width: 100%; position: static; }
+  }
   #home h2 {
     font-size: 15px;
     font-weight: 600;
@@ -1172,26 +1192,29 @@
 <div id="custom-bg" hidden></div>
 
 <div id="home">
-  <div class="section">
-    <h2>Meine Boards</h2>
-    <div class="board-grid" id="board-grid"></div>
-  </div>
-  <div class="section">
-    <h2>📌 Angepinnte Aufgaben</h2>
-    <div class="pinned-list" id="pinned-list"></div>
-  </div>
-  <div class="section" id="cal-section" hidden>
-    <div class="cal-head">
-      <h2>🗓️ Kalender</h2>
-      <span id="cal-title"></span>
-      <div class="cal-nav">
-        <button id="cal-prev" title="Voriger Monat">‹</button>
-        <button id="cal-today">Heute</button>
-        <button id="cal-next" title="Nächster Monat">›</button>
-      </div>
+  <div id="home-main">
+    <div class="section">
+      <h2>Meine Boards</h2>
+      <div class="board-grid" id="board-grid"></div>
     </div>
-    <div id="cal-grid"></div>
+    <div class="section" id="pinned-section">
+      <h2>📌 Angepinnte Aufgaben</h2>
+      <div class="pinned-list" id="pinned-list"></div>
+    </div>
+    <div class="section" id="cal-section" hidden>
+      <div class="cal-head">
+        <h2>🗓️ Kalender</h2>
+        <span id="cal-title"></span>
+        <div class="cal-nav">
+          <button id="cal-prev" title="Voriger Monat">‹</button>
+          <button id="cal-today">Heute</button>
+          <button id="cal-next" title="Nächster Monat">›</button>
+        </div>
+      </div>
+      <div id="cal-grid"></div>
+    </div>
   </div>
+  <div id="home-side"></div>
 </div>
 
 <div id="board"></div>
@@ -1397,6 +1420,8 @@ function settings() {
   if (s.showTags == null) s.showTags = true;
   if (s.showCalendar == null) s.showCalendar = true;
   if (s.autoArchive == null) s.autoArchive = false;
+  if (s.sidePinned == null) s.sidePinned = false;
+  if (s.sideCalendar == null) s.sideCalendar = false;
   return s;
 }
 
@@ -1676,7 +1701,17 @@ viewTitle.addEventListener("keydown", e => {
 const boardGrid = document.getElementById("board-grid");
 const pinnedList = document.getElementById("pinned-list");
 
+// Bereiche je nach Einstellung in die rechte Spalte oder nach unten schieben
+function applyHomeLayout() {
+  const s = settings();
+  const main = document.getElementById("home-main");
+  const side = document.getElementById("home-side");
+  (s.sidePinned ? side : main).appendChild(document.getElementById("pinned-section"));
+  (s.sideCalendar ? side : main).appendChild(document.getElementById("cal-section"));
+}
+
 function renderHome() {
+  applyHomeLayout();
   // --- Board-Kacheln ---
   boardGrid.innerHTML = "";
   for (const board of state.boards) {
@@ -3054,6 +3089,16 @@ function openOptionsMenu(anchor) {
       if (n) render();
     });
 
+  const sep = document.createElement("div");
+  sep.className = "sep";
+  dd.appendChild(sep);
+  const head = document.createElement("div");
+  head.className = "opt-hint";
+  head.textContent = "Aufbau der Startseite:";
+  dd.appendChild(head);
+  mkToggle("📌 Angepinnte rechts neben den Boards", "sidePinned");
+  mkToggle("🗓️ Kalender rechts neben den Boards", "sideCalendar");
+
   document.body.appendChild(dd);
   const r = anchor.getBoundingClientRect();
   dd.style.top = (r.bottom + 6) + "px";
@@ -3217,6 +3262,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 8, date: "14.08.2026", title: "Startseite anpassbar", items: [
+    "📐 Der Aufbau der Startseite lässt sich jetzt anpassen: Angepinnte Aufgaben und/oder Kalender wahlweise in einer Spalte rechts neben den Boards (⚙️-Menü, Bereich „Aufbau der Startseite“).",
+    "Die Einstellung gilt pro Konto – jeder richtet sich die Startseite so ein, wie er mag."
+  ]},
   { version: 7, date: "14.08.2026", title: "Kalender auf der Startseite", items: [
     "🗓️ Monatsübersicht mit Kalenderwochen: alle fälligen Aufgaben aus allen Boards auf einen Blick – heute ist markiert, Überfälliges ist rot umrandet.",
     "Klick auf eine Aufgabe im Kalender öffnet sie direkt; mit ‹ › blätterst du durch die Monate.",
