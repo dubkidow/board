@@ -680,6 +680,36 @@
   }
   .check-add button:hover { background: var(--hover); }
 
+  /* ---------- Verknüpfungen ---------- */
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+  .link-item:hover { background: var(--hover-soft); }
+  .link-item .li-icon { flex-shrink: 0; font-size: 14px; }
+  .link-item .li-text {
+    flex: 1;
+    font-size: 13.5px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .link-item a.li-text { color: var(--accent); text-decoration: none; }
+  .link-item a.li-text:hover { text-decoration: underline; }
+  .link-item .li-text.li-path { cursor: copy; }
+  .link-item .li-del {
+    background: none; border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 12px;
+    visibility: hidden;
+  }
+  .link-item:hover .li-del { visibility: visible; }
+
   .comment {
     background: var(--hover-soft);
     border-radius: 8px;
@@ -959,6 +989,12 @@
       <div class="check-add">
         <input id="m-check-input" placeholder="Punkt hinzufügen… (Enter)">
         <button id="m-check-add">Hinzufügen</button>
+      </div>
+      <h3>Verknüpfungen</h3>
+      <div id="m-links"></div>
+      <div class="check-add">
+        <input id="m-link-input" placeholder="Link (OneDrive/Web) oder Dateipfad einfügen… (Enter)">
+        <button id="m-link-add">Hinzufügen</button>
       </div>
       <h3>Kommentare</h3>
       <div id="m-comments"></div>
@@ -1499,6 +1535,11 @@ function renderPinnedCard(p) {
     cl.textContent = "☑ " + done + "/" + p.task.checklist.length;
     meta.appendChild(cl);
   }
+  if (p.task.links && p.task.links.length) {
+    const l = document.createElement("span");
+    l.textContent = "🔗 " + p.task.links.length;
+    meta.appendChild(l);
+  }
   if (p.task.comments.length) {
     const c = document.createElement("span");
     c.textContent = "💬 " + p.task.comments.length;
@@ -1731,6 +1772,12 @@ function renderCard(task) {
     cl.textContent = "☑ " + done + "/" + task.checklist.length;
     cl.title = "Checkliste";
     meta.appendChild(cl);
+  }
+  if (task.links && task.links.length) {
+    const l = document.createElement("span");
+    l.textContent = "🔗 " + task.links.length;
+    l.title = "Verknüpfungen";
+    meta.appendChild(l);
   }
   if (task.comments.length) {
     const c = document.createElement("span");
@@ -2004,6 +2051,8 @@ function openModal(taskId) {
   updatePinButton(task);
   renderChecklist(task);
   mCheckInput.value = "";
+  renderLinks(task);
+  mLinkInput.value = "";
   renderComments(task);
   mCommentInput.value = "";
 
@@ -2105,6 +2154,105 @@ function addChecklistItem() {
 document.getElementById("m-check-add").addEventListener("click", addChecklistItem);
 mCheckInput.addEventListener("keydown", e => {
   if (e.key === "Enter") addChecklistItem();
+});
+
+/* ---------- Verknüpfungen ---------- */
+
+const mLinks = document.getElementById("m-links");
+const mLinkInput = document.getElementById("m-link-input");
+
+// Web-Link (https://…) oder Dateipfad (C:\… bzw. \\server\…)?
+function isWebLink(v) { return /^https?:\/\//i.test(v); }
+function isFilePath(v) { return /^[a-z]:[\\/]/i.test(v) || v.startsWith("\\\\"); }
+
+// Anzeigename: bei Web-Links Domain + Dateiname statt kryptischer Voll-URL
+function linkLabel(url) {
+  try {
+    const u = new URL(url);
+    let last = decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
+    if (last.length > 40) last = last.slice(0, 37) + "…";
+    return last ? u.hostname + " › " + last : u.hostname;
+  } catch (e) { return url; }
+}
+
+function renderLinks(task) {
+  task.links = task.links || [];
+  mLinks.innerHTML = "";
+  if (!task.links.length) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "color:#8093a5;font-size:13px;margin-bottom:10px;";
+    empty.textContent = "Noch keine Verknüpfungen. Tipp: In OneDrive „Link kopieren“ wählen und hier einfügen.";
+    mLinks.appendChild(empty);
+    return;
+  }
+  for (const link of task.links) {
+    const row = document.createElement("div");
+    row.className = "link-item";
+
+    const icon = document.createElement("span");
+    icon.className = "li-icon";
+
+    let text;
+    if (isWebLink(link.url)) {
+      icon.textContent = "🔗";
+      text = document.createElement("a");
+      text.href = link.url;
+      text.target = "_blank";
+      text.rel = "noopener noreferrer";
+      text.title = link.url + "\n(im neuen Tab öffnen)";
+    } else {
+      // Dateipfad: Browser dürfen lokale Dateien nicht öffnen – Klick kopiert den Pfad
+      icon.textContent = "📁";
+      text = document.createElement("span");
+      text.classList.add("li-path");
+      text.title = link.url + "\n(Klick kopiert den Pfad – dann im Explorer einfügen)";
+      text.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(link.url);
+          const orig = text.textContent;
+          text.textContent = "✓ Pfad kopiert – im Explorer einfügen";
+          setTimeout(() => { text.textContent = orig; }, 1600);
+        } catch (e) { alert("Kopieren nicht möglich. Pfad: " + link.url); }
+      });
+    }
+    text.classList.add("li-text");
+    text.textContent = isWebLink(link.url) ? linkLabel(link.url) : link.url;
+
+    const del = document.createElement("button");
+    del.className = "li-del";
+    del.textContent = "Löschen";
+    del.addEventListener("click", () => {
+      task.links = task.links.filter(x => x !== link);
+      save();
+      renderLinks(task);
+    });
+
+    row.append(icon, text, del);
+    mLinks.appendChild(row);
+  }
+}
+
+function addLink() {
+  const task = currentTask();
+  if (!task) return;
+  let v = mLinkInput.value.trim();
+  if (!v) return;
+  // "www.beispiel.de/…" ohne Protokoll trotzdem als Web-Link akzeptieren
+  if (!isWebLink(v) && !isFilePath(v) && /^[\w-]+(\.[\w-]+)+([\/?#]|$)/.test(v)) v = "https://" + v;
+  if (!isWebLink(v) && !isFilePath(v)) {
+    alert("Bitte einen Web-Link (https://…) oder einen Dateipfad (C:\\… oder \\\\Server\\…) einfügen.");
+    return;
+  }
+  (task.links = task.links || []).push({ id: uid(), url: v });
+  mLinkInput.value = "";
+  save();
+  renderLinks(task);
+  mLinkInput.focus();
+}
+
+document.getElementById("m-link-add").addEventListener("click", addLink);
+mLinkInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") addLink();
 });
 
 /* ---------- Kommentare ---------- */
@@ -2256,6 +2404,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 5, date: "14.08.2026", title: "Verknüpfungen & eigene Domain", items: [
+    "🔗 Verknüpfungen an Aufgaben: Web- und OneDrive-Links (in OneDrive „Link kopieren“ wählen) werden anklickbar, Dateipfade wie C:\\… oder \\\\Server\\… lassen sich per Klick kopieren.",
+    "Karten zeigen ein 🔗-Symbol, wenn Verknüpfungen vorhanden sind.",
+    "🌐 Das Board hat jetzt eine eigene Adresse: board.luecht-palm.de"
+  ]},
   { version: 4, date: "14.08.2026", title: "Hintergrundbild in der Cloud", items: [
     "🖼️ Dein eigenes Hintergrundbild wird jetzt mit deinem Konto in der Cloud gespeichert – es bleibt nach An- und Abmeldung erhalten und erscheint auch auf anderen Geräten.",
     "🎨 Auch Unschärfe, Transparenz und der dunkle Modus wandern mit."
