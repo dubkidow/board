@@ -802,13 +802,14 @@
 
   #cloud-status { font-size: 12px; color: var(--text-light); margin-right: 4px; white-space: nowrap; }
 
-  #login-overlay {
-    position: fixed; inset: 0; z-index: 200;
+  #login-overlay, #pw-backdrop {
+    position: fixed; inset: 0; z-index: 260;
     background: rgba(31,45,61,.55);
     backdrop-filter: blur(3px);
     display: flex; align-items: center; justify-content: center;
   }
-  #login-overlay[hidden] { display: none; }
+  #login-overlay[hidden], #pw-backdrop[hidden] { display: none; }
+  #pw-error { color: #d64545; font-size: 13px; margin-top: 12px; }
   .login-box {
     background: var(--modal-bg); border-radius: 14px;
     padding: 32px 36px; width: 340px; max-width: calc(100vw - 40px);
@@ -830,14 +831,14 @@
     font-size: 14px; margin-bottom: 10px; text-align: center;
   }
   .login-box input:focus { outline: 2px solid var(--accent); border-color: transparent; }
-  #login-send, #login-verify {
+  #login-pw, #login-verify, #pw-save {
     width: 100%; padding: 10px 12px;
     background: var(--accent); color: #fff;
     border: none; border-radius: 8px;
     font-size: 14px; cursor: pointer;
   }
-  #login-send:hover, #login-verify:hover { filter: brightness(.95); }
-  #login-send:disabled, #login-verify:disabled { opacity: .6; cursor: default; }
+  #login-pw:hover, #login-verify:hover, #pw-save:hover { filter: brightness(.95); }
+  #login-pw:disabled, #login-verify:disabled, #pw-save:disabled { opacity: .6; cursor: default; }
   .login-secondary {
     background: none; border: none;
     color: var(--text-light); text-decoration: underline;
@@ -1223,10 +1224,12 @@
   <div class="login-box">
     <div class="login-logo">B</div>
     <h2>Kanban-Board</h2>
-    <p>Melde dich mit deiner E-Mail-Adresse an, um deine Boards auf allen Geräten zu nutzen. Du bekommst einen Anmeldecode zugeschickt – kein Passwort nötig.</p>
+    <p>Melde dich an, um deine Boards auf allen Geräten zu nutzen – mit Passwort oder per E-Mail-Code.</p>
     <div id="login-step-email">
       <input id="login-email" type="email" placeholder="deine@email.de" autocomplete="email">
-      <button id="login-send">Code senden</button>
+      <input id="login-password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <button id="login-pw">Anmelden</button>
+      <button id="login-send" class="login-secondary">Stattdessen Code per E-Mail senden (auch bei vergessenem Passwort)</button>
     </div>
     <div id="login-step-code" hidden>
       <p id="login-sent-info"></p>
@@ -1236,6 +1239,18 @@
     </div>
     <div id="login-error" hidden></div>
     <button id="login-offline" class="login-secondary">Ohne Konto weiterarbeiten (nur dieses Gerät)</button>
+  </div>
+</div>
+
+<div id="pw-backdrop" hidden>
+  <div class="login-box">
+    <h2>🔑 Passwort festlegen</h2>
+    <p>Mindestens 6 Zeichen – mehr Regeln gibt es nicht. Damit meldest du dich künftig ohne E-Mail-Code an. Der Code-Weg bleibt als Ersatz erhalten, falls du das Passwort mal vergisst.</p>
+    <input id="pw-new" type="password" placeholder="Neues Passwort" autocomplete="new-password">
+    <input id="pw-repeat" type="password" placeholder="Passwort wiederholen" autocomplete="new-password">
+    <button id="pw-save">Speichern</button>
+    <div id="pw-error" hidden></div>
+    <button id="pw-cancel" class="login-secondary">Abbrechen</button>
   </div>
 </div>
 
@@ -3099,6 +3114,20 @@ function openOptionsMenu(anchor) {
   mkToggle("📌 Angepinnte rechts neben den Boards", "sidePinned");
   mkToggle("🗓️ Kalender rechts neben den Boards", "sideCalendar");
 
+  if (cloudUser) {
+    const sep2 = document.createElement("div");
+    sep2.className = "sep";
+    dd.appendChild(sep2);
+    const pwItem = document.createElement("div");
+    pwItem.className = "item";
+    pwItem.textContent = "🔑 Passwort festlegen / ändern…";
+    pwItem.addEventListener("click", () => {
+      closeDropdown();
+      openPwDialog();
+    });
+    dd.appendChild(pwItem);
+  }
+
   document.body.appendChild(dd);
   const r = anchor.getBoundingClientRect();
   dd.style.top = (r.bottom + 6) + "px";
@@ -3186,6 +3215,8 @@ backdrop.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  const pwBd = document.getElementById("pw-backdrop");
+  if (!pwBd.hidden) { pwBd.hidden = true; return; }
   const newsBd = document.getElementById("news-backdrop");
   if (newsBd.classList.contains("open")) { newsBd.classList.remove("open"); return; }
   if (archiveBackdrop.classList.contains("open")) { archiveBackdrop.classList.remove("open"); return; }
@@ -3262,6 +3293,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 9, date: "14.08.2026", title: "Anmeldung mit Passwort", items: [
+    "🔑 Du kannst dich jetzt mit E-Mail + Passwort anmelden – schneller als der Code-Weg.",
+    "Passwort festlegen: einmal anmelden, dann im ⚙️-Menü „Passwort festlegen / ändern“ wählen. Einzige Regel: mindestens 6 Zeichen.",
+    "Der Code per E-Mail bleibt als Alternative erhalten – auch als Rettung, falls du das Passwort vergisst."
+  ]},
   { version: 8, date: "14.08.2026", title: "Startseite anpassbar", items: [
     "📐 Der Aufbau der Startseite lässt sich jetzt anpassen: Angepinnte Aufgaben und/oder Kalender wahlweise in einer Spalte rechts neben den Boards (⚙️-Menü, Bereich „Aufbau der Startseite“).",
     "Die Einstellung gilt pro Konto – jeder richtet sich die Startseite so ein, wie er mag."
@@ -3466,8 +3502,76 @@ loginVerifyBtn.addEventListener("click", async () => {
   await onLoggedIn(data.user);
 });
 
-loginEmail.addEventListener("keydown", e => { if (e.key === "Enter") loginSendBtn.click(); });
+/* --- Anmeldung mit Passwort --- */
+
+const loginPassword = document.getElementById("login-password");
+const loginPwBtn = document.getElementById("login-pw");
+
+loginPwBtn.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+  if (!email.includes("@")) { showLoginError("Bitte eine gültige E-Mail-Adresse eingeben."); return; }
+  if (!password) { showLoginError("Bitte das Passwort eingeben – oder unten den Code per E-Mail anfordern."); return; }
+  showLoginError("");
+  loginPwBtn.disabled = true;
+  loginPwBtn.textContent = "Prüfe…";
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  loginPwBtn.disabled = false;
+  loginPwBtn.textContent = "Anmelden";
+  if (error || !data || !data.user) {
+    showLoginError("Anmeldung fehlgeschlagen: E-Mail oder Passwort falsch. Falls du noch kein Passwort festgelegt hast, nutze den Code per E-Mail und lege danach im ⚙️-Menü ein Passwort fest.");
+    return;
+  }
+  loginPassword.value = "";
+  await onLoggedIn(data.user);
+});
+
+loginEmail.addEventListener("keydown", e => { if (e.key === "Enter") loginPassword.focus(); });
+loginPassword.addEventListener("keydown", e => { if (e.key === "Enter") loginPwBtn.click(); });
 loginCode.addEventListener("keydown", e => { if (e.key === "Enter") loginVerifyBtn.click(); });
+
+/* --- Passwort festlegen / ändern --- */
+
+const pwBackdrop = document.getElementById("pw-backdrop");
+const pwNew = document.getElementById("pw-new");
+const pwRepeat = document.getElementById("pw-repeat");
+const pwErrorEl = document.getElementById("pw-error");
+const pwSaveBtn = document.getElementById("pw-save");
+
+function showPwError(msg) {
+  pwErrorEl.textContent = msg;
+  pwErrorEl.hidden = !msg;
+}
+
+function openPwDialog() {
+  pwNew.value = "";
+  pwRepeat.value = "";
+  showPwError("");
+  pwBackdrop.hidden = false;
+  pwNew.focus();
+}
+
+pwSaveBtn.addEventListener("click", async () => {
+  const p1 = pwNew.value, p2 = pwRepeat.value;
+  if (p1.length < 6) { showPwError("Mindestens 6 Zeichen, bitte – mehr Regeln gibt es nicht."); return; }
+  if (p1 !== p2) { showPwError("Die beiden Passwörter stimmen nicht überein."); return; }
+  showPwError("");
+  pwSaveBtn.disabled = true;
+  pwSaveBtn.textContent = "Speichere…";
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  pwSaveBtn.disabled = false;
+  pwSaveBtn.textContent = "Speichern";
+  if (error) {
+    showPwError("Speichern fehlgeschlagen: " + error.message);
+    return;
+  }
+  pwBackdrop.hidden = true;
+  alert("Passwort gespeichert. Ab jetzt kannst du dich damit anmelden – der E-Mail-Code funktioniert weiterhin als Ersatz.");
+});
+
+document.getElementById("pw-cancel").addEventListener("click", () => pwBackdrop.hidden = true);
+pwNew.addEventListener("keydown", e => { if (e.key === "Enter") pwRepeat.focus(); });
+pwRepeat.addEventListener("keydown", e => { if (e.key === "Enter") pwSaveBtn.click(); });
 
 document.getElementById("login-back").addEventListener("click", () => {
   loginStepCode.hidden = true;
