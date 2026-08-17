@@ -2245,6 +2245,18 @@ function openBoardMenu(board, anchor, nameEl) {
     dd.appendChild(it);
   };
 
+  const idx = state.boards.indexOf(board);
+  if (idx > 0) mkItem("← Nach vorne verschieben", () => {
+    state.boards.splice(idx, 1);
+    state.boards.splice(idx - 1, 0, board);
+    render();
+  });
+  if (idx < state.boards.length - 1) mkItem("→ Nach hinten verschieben", () => {
+    state.boards.splice(idx, 1);
+    state.boards.splice(idx + 1, 0, board);
+    render();
+  });
+
   mkItem("Umbenennen", () => {
     nameEl.contentEditable = "true";
     nameEl.focus();
@@ -3604,6 +3616,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 12, date: "17.08.2026", title: "Boards am Handy sortieren", items: [
+    "↔️ Board-Kacheln lassen sich jetzt auch ohne Maus umsortieren: im ⋮-Menü der Kachel „Nach vorne/hinten verschieben“ wählen – praktisch am Handy, wo es kein Drag & Drop gibt.",
+    "Die Spalten im Board konnten das schon (⋮-Menü der Spalte)."
+  ]},
   { version: 11, date: "17.08.2026", title: "Tag-Farben & App-Icon", items: [
     "🎨 Tag-Farben anpassbar: im Tag-Menü („+ Tag“ in der Aufgabe) auf 🎨 tippen – Farbpalette oder ganz freie Farbwahl über das gestrichelte Feld.",
     "🟦 Das Board hat jetzt ein eigenes Symbol im Browser-Tab und auf dem Handy-Startbildschirm."
