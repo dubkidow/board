@@ -545,6 +545,17 @@
   }
   .dropdown .swatch:hover { transform: scale(1.12); }
   .dropdown .swatch.active { border-color: #33475b; }
+  .dropdown .swatch-custom {
+    width: 26px; height: 26px;
+    padding: 0;
+    border: 2px dashed var(--input-border);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+  }
+  .dropdown .swatch-custom:hover { transform: scale(1.12); }
+  .dropdown .swatch-custom::-webkit-color-swatch-wrapper { padding: 2px; }
+  .dropdown .swatch-custom::-webkit-color-swatch { border: none; border-radius: 3px; }
 
   /* ---------- Modal ---------- */
   #modal-backdrop {
@@ -1305,6 +1316,7 @@
     .dropdown .item, .dropdown .opt-row { padding: 11px 14px; }
     .dropdown .swatches { grid-template-columns: repeat(5, 32px); gap: 8px; }
     .dropdown .swatch { width: 32px; height: 32px; }
+    .dropdown .swatch-custom { width: 32px; height: 32px; }
 
     /* 16px verhindert das automatische Hineinzoomen von iOS beim Tippen */
     input:not([type=range]):not([type=checkbox]), textarea, select { font-size: 16px; }
@@ -3095,7 +3107,7 @@ function renderTags(task) {
   mTagsEl.appendChild(add);
 }
 
-function openTagMenu(board, task, anchor) {
+function openTagMenu(board, task, anchor, colorTagId) {
   closeDropdown();
   const dd = document.createElement("div");
   dd.className = "dropdown";
@@ -3113,6 +3125,14 @@ function openTagMenu(board, task, anchor) {
 
     const tools = document.createElement("span");
     tools.className = "tag-tools";
+    const colBtn = document.createElement("button");
+    colBtn.textContent = "🎨";
+    colBtn.title = "Farbe des Tags ändern";
+    colBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      openTagMenu(board, task, anchor, colorTagId === tag.id ? null : tag.id);
+    });
+    tools.appendChild(colBtn);
     const ren = document.createElement("button");
     ren.textContent = "✏️";
     ren.title = "Tag umbenennen";
@@ -3149,6 +3169,39 @@ function openTagMenu(board, task, anchor) {
       openTagMenu(board, task, anchor);
     });
     dd.appendChild(it);
+
+    // Farbpalette für diesen Tag (über 🎨 auf-/zugeklappt)
+    if (colorTagId === tag.id) {
+      const sw = document.createElement("div");
+      sw.className = "swatches";
+      for (const color of COLORS) {
+        const s = document.createElement("div");
+        s.className = "swatch" + (tag.color === color ? " active" : "");
+        s.style.background = color;
+        s.addEventListener("click", e => {
+          e.stopPropagation();
+          tag.color = color;
+          save();
+          render();
+          renderTags(task);
+          openTagMenu(board, task, anchor, tag.id);
+        });
+        sw.appendChild(s);
+      }
+      const custom = document.createElement("input");
+      custom.type = "color";
+      custom.className = "swatch-custom";
+      custom.title = "Eigene Farbe wählen…";
+      if (/^#[0-9a-f]{6}$/i.test(tag.color)) custom.value = tag.color;
+      custom.addEventListener("input", () => {
+        tag.color = custom.value;
+        save();
+        render();
+        renderTags(task);
+      });
+      sw.appendChild(custom);
+      dd.appendChild(sw);
+    }
   }
 
   if (board.tags.length) {
@@ -3551,6 +3604,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 11, date: "17.08.2026", title: "Tag-Farben & App-Icon", items: [
+    "🎨 Tag-Farben anpassbar: im Tag-Menü („+ Tag“ in der Aufgabe) auf 🎨 tippen – Farbpalette oder ganz freie Farbwahl über das gestrichelte Feld.",
+    "🟦 Das Board hat jetzt ein eigenes Symbol im Browser-Tab und auf dem Handy-Startbildschirm."
+  ]},
   { version: 10, date: "16.08.2026", title: "Handy-Ansicht", items: [
     "📱 Die Oberfläche passt sich jetzt an kleine Displays an: größere Tippflächen, lesbare Schrift und keine abgeschnittenen Menüs mehr.",
     "Die Topbar zeigt auf dem Handy nur noch Titel, 🌙 und ⚙️ – Hintergrund, Export, Import, „Was ist neu?“ und Abmelden stecken im neuen ⋯-Menü.",
