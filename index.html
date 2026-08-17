@@ -66,10 +66,12 @@
     background: var(--bg);
     color: var(--text);
     height: 100vh;
+    height: 100dvh;          /* Mobile: ohne Adressleisten-Sprung */
     display: flex;
     flex-direction: column;
     overflow: hidden;
     letter-spacing: .01em;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* ---------- Topbar ---------- */
@@ -162,8 +164,10 @@
   #home-side .cal-day { min-height: 58px; padding: 3px 4px; }
   #home-side #cal-grid { grid-template-columns: 34px repeat(7, 1fr); gap: 3px; }
   @media (max-width: 1100px) {
-    #home.active { flex-direction: column; }
-    #home-side { width: 100%; position: static; }
+    /* Untereinander statt nebeneinander – stretch, damit die Bereiche
+       die volle Breite nutzen und nicht über den Bildschirm hinauswachsen */
+    #home.active { flex-direction: column; align-items: stretch; }
+    #home-main, #home-side { width: 100%; position: static; }
   }
   #home h2 {
     font-size: 15px;
@@ -453,6 +457,12 @@
     font-size: 12px;
   }
   .card .card-meta:empty { display: none; margin: 0; }
+  /* Kurz hervorheben, wohin eine verschobene Aufgabe gewandert ist */
+  .card.card-focus { animation: card-focus 1.6s ease-out; }
+  @keyframes card-focus {
+    0%, 45% { box-shadow: 0 0 0 3px var(--accent), var(--shadow-md); }
+    100% { box-shadow: var(--shadow); }
+  }
   .drop-placeholder {
     height: 4px;
     background: var(--accent);
@@ -503,7 +513,10 @@
     z-index: 300;
     min-width: 180px;
     font-size: 13.5px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 24px);
   }
   .dropdown .item {
     padding: 8px 14px;
@@ -567,10 +580,13 @@
     font-weight: 600;
     color: #fff;
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 4px 8px;
     white-space: nowrap;
     margin-top: 4px;
+    cursor: pointer;
+    user-select: none;
   }
+  #modal .m-col-badge:hover { filter: brightness(1.1); }
   #m-title {
     flex: 1;
     font-size: 19px;
@@ -1168,6 +1184,130 @@
   ::-webkit-scrollbar-thumb { background: rgba(31,45,61,.28); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(31,45,61,.4); }
   ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Menü „⋯“ nur auf schmalen Displays */
+  #btn-more { display: none; position: relative; }
+  #more-dot {
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #ef5350;
+    box-shadow: 0 0 0 2px var(--card-bg);
+  }
+
+  /* ---------- Touch-Bedienung (kein Mauszeiger) ---------- */
+  @media (hover: none) {
+    /* Ohne Hover bleiben sonst versteckte Schaltflächen unerreichbar */
+    .board-tile .tile-menu-btn,
+    .card .card-edit-btn,
+    .check-item .ci-del,
+    .link-item .li-del,
+    .comment .c-del,
+    .dropdown .item .tag-tools { visibility: visible; }
+    /* Hover-Effekte fühlen sich auf Touch wie „hängengeblieben“ an */
+    .board-tile:hover, .pinned-card:hover, .card:hover,
+    header button:hover, header .logo:hover,
+    #add-col button:hover, .ghost-col button:hover { transform: none; }
+    .cal-chip:hover { filter: none; }
+    /* Größere Tippflächen */
+    .card .card-edit-btn { font-size: 14px; padding: 4px 7px; }
+    .board-tile .tile-menu-btn { font-size: 18px; padding: 2px 8px; }
+    .col-menu-btn { font-size: 18px; padding: 0 8px; }
+    .check-item .ci-del, .link-item .li-del, .comment .c-del { font-size: 14px; padding: 2px 6px; }
+    .check-item { padding: 8px; }
+    .check-item input[type=checkbox] { width: 19px; height: 19px; }
+  }
+
+  /* ---------- Schmale Topbar ---------- */
+  /* Sobald der Platz eng wird, bleiben nur Logo, Titel, 🌙 und ⚙️ stehen –
+     alles Weitere wandert ins „⋯“-Menü, damit der Board-Name lesbar bleibt. */
+  @media (max-width: 900px) {
+    header { padding: 8px 10px; gap: 6px; }
+    header .hide-narrow { display: none; }
+    header .crumb, header .crumb-sep, header .spacer { display: none; }
+    #btn-more { display: block; }
+    header h1 { flex: 1; min-width: 0; font-size: 16px; }
+    header .logo { width: 32px; height: 32px; font-size: 17px; }
+    header button { padding: 7px 10px; font-size: 15px; line-height: 1; }
+    #cloud-status .cs-text { display: none; }
+    #cloud-status { margin-right: 0; font-size: 14px; }
+  }
+
+  /* ---------- Schmale Displays (Smartphone) ---------- */
+  @media (max-width: 760px) {
+    /* Startseite */
+    #home { padding: 14px 12px; gap: 16px; }
+    #home .section { padding: 16px 14px; border-radius: 16px; margin-bottom: 16px; }
+    #home h2 { font-size: 14px; margin-bottom: 12px; }
+    .board-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
+    .board-tile .tile-body { padding: 12px 12px 14px; }
+    .board-tile .tile-name { font-size: 14px; padding-right: 18px; }
+    .board-tile .tile-menu-btn { top: 10px; right: 2px; }
+    .board-tile.add-tile { min-height: 76px; }
+    .pinned-list, #home-side .pinned-list { grid-template-columns: 1fr; }
+
+    /* Kalender: sieben Spalten auf Handybreite – Aufgaben als Farbbalken */
+    #cal-grid, #home-side #cal-grid { grid-template-columns: 22px repeat(7, 1fr); gap: 2px; }
+    .cal-head { gap: 8px; }
+    #cal-title { font-size: 14px; min-width: 0; flex: 1; }
+    .cal-nav button { padding: 6px 12px; }
+    .cal-hd { font-size: 9.5px; padding: 2px 0; }
+    .cal-kw { font-size: 9.5px; padding-top: 6px; border-radius: 5px; }
+    .cal-day, #home-side .cal-day { min-height: 48px; padding: 2px 3px; border-radius: 6px; }
+    .cal-day .cd-num { font-size: 10.5px; margin-bottom: 2px; }
+    .cal-chip { font-size: 0; height: 5px; padding: 0; margin-bottom: 2px; border-radius: 3px; }
+    .cal-chip.cal-over { outline-width: 1px; }
+    .cal-more { font-size: 9px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Board: eine Spalte füllt den Bildschirm, die nächste blitzt hervor */
+    #board { padding: 10px; gap: 10px; scroll-snap-type: x proximity; }
+    .column { width: min(86vw, 320px); min-width: min(86vw, 320px); scroll-snap-align: center; }
+    #add-col, .ghost-col { min-width: min(60vw, 220px); padding: 8px 4px; }
+    #add-col input { width: 100%; }
+    .col-header { padding: 11px 12px; }
+
+    /* Aufgabenfenster als Blatt von unten */
+    #modal-backdrop { padding: 0; align-items: flex-end; }
+    #modal {
+      width: 100%;
+      max-height: 92dvh;
+      border-radius: 18px 18px 0 0;
+      border-bottom: none;
+    }
+    #modal .m-head { padding: 12px 14px 8px; align-items: center; flex-wrap: wrap; }
+    #modal .m-col-badge { order: 1; margin-top: 0; }
+    #m-complete { order: 2; margin-left: auto; margin-top: 0; }
+    #m-pin { order: 3; margin-top: 0; }
+    #modal .m-close { order: 4; font-size: 26px; padding: 2px 8px; }
+    #m-title { order: 5; flex: 1 1 100%; font-size: 17px; margin-top: 4px; }
+    #modal .m-body { padding: 12px 14px; }
+    #modal .m-foot { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+    .m-props { gap: 14px; }
+    .comment-form { flex-wrap: wrap; }
+    .comment-form button { padding: 9px 16px; align-self: flex-end; }
+    .check-add button { padding: 9px 14px; }
+
+    /* Weitere Fenster */
+    #news-backdrop, #archive-backdrop { padding: 5vh 10px; }
+    #news-modal, #archive-modal { max-height: 86dvh; }
+    #news-modal .n-head, #archive-modal .n-head { padding: 14px 16px; }
+    #news-modal .n-body, #archive-modal .n-body { padding: 4px 16px 18px; }
+    .arch-item { flex-wrap: wrap; }
+    .arch-item .a-info { flex: 1 1 100%; }
+    .login-box { padding: 26px 22px; width: 100%; }
+
+    /* Menüs: mehr Platz zum Tippen, notfalls scrollbar */
+    .dropdown { min-width: 200px; max-height: 70dvh; }
+    .dropdown .item, .dropdown .opt-row { padding: 11px 14px; }
+    .dropdown .swatches { grid-template-columns: repeat(5, 32px); gap: 8px; }
+    .dropdown .swatch { width: 32px; height: 32px; }
+
+    /* 16px verhindert das automatische Hineinzoomen von iOS beim Tippen */
+    input:not([type=range]):not([type=checkbox]), textarea, select { font-size: 16px; }
+    .card { padding: 11px 12px; }
+    .card .card-title { font-size: 14px; }
+  }
 </style>
 </head>
 <body>
@@ -1179,13 +1319,14 @@
   <h1 id="view-title" spellcheck="false"></h1>
   <div class="spacer"></div>
   <span id="cloud-status"></span>
-  <button id="btn-logout" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
-  <button id="btn-news" title="Was ist neu?">✨ Neu<span id="news-dot" hidden></span></button>
+  <button id="btn-logout" class="hide-narrow" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
+  <button id="btn-news" class="hide-narrow" title="Was ist neu?">✨ Neu<span id="news-dot" hidden></span></button>
   <button id="btn-theme" title="Dunklen/hellen Modus umschalten">🌙</button>
   <button id="btn-options" title="Optionen: Funktionen ein-/ausschalten">⚙️</button>
-  <button id="btn-bg" title="Hintergrund ändern">🎨 Hintergrund</button>
-  <button id="btn-export" title="Alle Boards als Datei sichern">Export</button>
-  <button id="btn-import" title="Boards aus Datei laden">Import</button>
+  <button id="btn-bg" class="hide-narrow" title="Hintergrund ändern">🎨 Hintergrund</button>
+  <button id="btn-export" class="hide-narrow" title="Alle Boards als Datei sichern">Export</button>
+  <button id="btn-import" class="hide-narrow" title="Boards aus Datei laden">Import</button>
+  <button id="btn-more" title="Weitere Aktionen">⋯<span id="more-dot" hidden></span></button>
   <input type="file" id="import-file" accept=".json" hidden>
   <input type="file" id="bg-file" accept="image/*" hidden>
 </header>
@@ -1277,7 +1418,7 @@
 <div id="modal-backdrop">
   <div id="modal">
     <div class="m-head">
-      <span class="m-col-badge" id="m-col-badge"></span>
+      <span class="m-col-badge" id="m-col-badge" title="Spalte wechseln"></span>
       <textarea id="m-title" rows="1" spellcheck="false"></textarea>
       <button id="m-complete" title="Aufgabe abschließen und ins Archiv verschieben">✓ Abschließen</button>
       <button id="m-pin" title="Auf Startseite pinnen">📌</button>
@@ -1645,10 +1786,7 @@ function openBgMenu(anchor) {
   }
 
   document.body.appendChild(dd);
-  const r = anchor.getBoundingClientRect();
-  dd.style.top = (r.bottom + 6) + "px";
-  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
-  openDropdown = dd;
+  placeDropdown(dd, anchor);
 }
 
 document.getElementById("btn-bg").addEventListener("click", e => {
@@ -2106,10 +2244,7 @@ function openBoardMenu(board, anchor, nameEl) {
   }, true);
 
   document.body.appendChild(dd);
-  const r = anchor.getBoundingClientRect();
-  dd.style.top = (r.bottom + 6) + "px";
-  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
-  openDropdown = dd;
+  placeDropdown(dd, anchor);
 }
 
 /* ================= Board-Ansicht ================= */
@@ -2501,6 +2636,22 @@ function closeDropdown() {
 document.addEventListener("click", closeDropdown);
 window.addEventListener("resize", closeDropdown);
 
+// Menü unter dem Auslöser platzieren – und dabei im sichtbaren Bereich halten
+// (auf schmalen Displays klappt es nach oben, wenn unten kein Platz mehr ist)
+function placeDropdown(dd, anchor) {
+  const pad = 8;
+  const r = anchor.getBoundingClientRect();
+  const w = dd.offsetWidth, h = dd.offsetHeight;
+  dd.style.left = Math.max(pad, Math.min(r.left, window.innerWidth - w - pad)) + "px";
+  let top = r.bottom + 6;
+  if (top + h > window.innerHeight - pad) {
+    const above = r.top - h - 6;
+    top = above >= pad ? above : Math.max(pad, window.innerHeight - h - pad);
+  }
+  dd.style.top = top + "px";
+  openDropdown = dd;
+}
+
 function openColumnMenu(board, col, anchor) {
   closeDropdown();
   const dd = document.createElement("div");
@@ -2556,10 +2707,7 @@ function openColumnMenu(board, col, anchor) {
   }, true);
 
   document.body.appendChild(dd);
-  const r = anchor.getBoundingClientRect();
-  dd.style.top = (r.bottom + 6) + "px";
-  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
-  openDropdown = dd;
+  placeDropdown(dd, anchor);
 }
 
 /* ================= Modal (Aufgaben-Detail) ================= */
@@ -2580,8 +2728,7 @@ function openModal(taskId) {
   modalTaskId = taskId;
   const { col, task } = found;
 
-  mColBadge.textContent = col.name;
-  mColBadge.style.background = col.color;
+  setColBadge(col);
   mTitle.value = task.title;
   mDesc.value = task.description || "";
   mCreated.textContent = "Erstellt am " + formatDate(task.createdAt) +
@@ -2605,6 +2752,22 @@ function closeModal() {
   backdrop.classList.remove("open");
   modalTaskId = null;
   render();
+  showMovedTask();
+}
+
+// Nach einem Spaltenwechsel: zur Aufgabe scrollen und sie kurz hervorheben –
+// sonst sucht man sie bei vielen Spalten/Aufgaben außerhalb des Bildschirms.
+let movedTaskId = null;
+
+function showMovedTask() {
+  const id = movedTaskId;
+  movedTaskId = null;
+  if (!id || !currentBoard()) return;
+  const card = boardEl.querySelector(`[data-task-id="${id}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  card.classList.add("card-focus");
+  setTimeout(() => card.classList.remove("card-focus"), 1600);
 }
 
 function currentTask() {
@@ -2631,6 +2794,56 @@ mPin.addEventListener("click", () => {
   touch(task);
   save();
   updatePinButton(task);
+});
+
+/* ---------- Spalte wechseln ---------- */
+// Auf dem Handy gibt es kein Drag & Drop – über die Spalten-Marke oben
+// im Aufgabenfenster lässt sich die Aufgabe trotzdem verschieben.
+
+function setColBadge(col) {
+  mColBadge.textContent = col.name + " ▾";
+  mColBadge.style.background = col.color;
+}
+
+mColBadge.addEventListener("click", e => {
+  e.stopPropagation();
+  const found = modalTaskId ? findTask(modalTaskId) : null;
+  if (!found) return;
+  closeDropdown();
+
+  const dd = document.createElement("div");
+  dd.className = "dropdown";
+  dd.addEventListener("click", ev => ev.stopPropagation());
+
+  const head = document.createElement("div");
+  head.className = "opt-hint";
+  head.style.padding = "8px 14px 6px";
+  head.textContent = "In diese Spalte verschieben:";
+  dd.appendChild(head);
+
+  for (const col of found.board.columns) {
+    const it = document.createElement("div");
+    it.className = "item";
+    const dot = document.createElement("span");
+    dot.className = "tag-dot";
+    dot.style.background = col.color;
+    it.append(dot, document.createTextNode(col.name + (col === found.col ? " ✓" : "")));
+    it.addEventListener("click", () => {
+      closeDropdown();
+      if (col === found.col) return;
+      const i = found.col.tasks.indexOf(found.task);
+      found.col.tasks.splice(i, 1);
+      col.tasks.push(found.task);
+      touch(found.task);
+      save();
+      setColBadge(col);
+      movedTaskId = found.task.id;
+    });
+    dd.appendChild(it);
+  }
+
+  document.body.appendChild(dd);
+  placeDropdown(dd, mColBadge);
 });
 
 /* ---------- Checkliste ---------- */
@@ -2957,10 +3170,7 @@ function openTagMenu(board, task, anchor) {
   dd.appendChild(create);
 
   document.body.appendChild(dd);
-  const r = anchor.getBoundingClientRect();
-  dd.style.top = (r.bottom + 6) + "px";
-  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
-  openDropdown = dd;
+  placeDropdown(dd, anchor);
 }
 
 /* ---------- Abschließen & Archiv ---------- */
@@ -3129,15 +3339,60 @@ function openOptionsMenu(anchor) {
   }
 
   document.body.appendChild(dd);
-  const r = anchor.getBoundingClientRect();
-  dd.style.top = (r.bottom + 6) + "px";
-  dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 10) + "px";
-  openDropdown = dd;
+  placeDropdown(dd, anchor);
 }
 
 document.getElementById("btn-options").addEventListener("click", e => {
   e.stopPropagation();
   openOptionsMenu(e.currentTarget);
+});
+
+/* ---------- „⋯“-Menü (schmale Displays) ---------- */
+// Auf dem Handy ist in der Topbar kein Platz für alle Schalter –
+// die selteneren wandern in dieses Menü.
+
+function openMoreMenu(anchor) {
+  closeDropdown();
+  const dd = document.createElement("div");
+  dd.className = "dropdown";
+  dd.addEventListener("click", e => e.stopPropagation());
+
+  const status = cloudStatusEl.textContent.trim();
+  if (status) {
+    const info = document.createElement("div");
+    info.className = "opt-hint";
+    info.style.padding = "8px 14px";
+    info.textContent = status;
+    dd.appendChild(info);
+    const sep = document.createElement("div");
+    sep.className = "sep";
+    dd.appendChild(sep);
+  }
+
+  const mkItem = (label, fn) => {
+    const it = document.createElement("div");
+    it.className = "item";
+    it.textContent = label;
+    it.addEventListener("click", () => { closeDropdown(); fn(); });
+    dd.appendChild(it);
+  };
+  const clickBtn = id => document.getElementById(id).click();
+
+  mkItem("✨ Was ist neu?", openNews);
+  mkItem("🎨 Hintergrund…", () => openBgMenu(anchor));
+  mkItem("⬇️ Export", () => clickBtn("btn-export"));
+  mkItem("⬆️ Import", () => clickBtn("btn-import"));
+  if (!document.getElementById("btn-logout").hidden) {
+    mkItem("🚪 Abmelden", () => clickBtn("btn-logout"));
+  }
+
+  document.body.appendChild(dd);
+  placeDropdown(dd, anchor);
+}
+
+document.getElementById("btn-more").addEventListener("click", e => {
+  e.stopPropagation();
+  openMoreMenu(e.currentTarget);
 });
 
 /* ---------- Kommentare ---------- */
@@ -3293,6 +3548,14 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 10, date: "16.08.2026", title: "Handy-Ansicht", items: [
+    "📱 Die Oberfläche passt sich jetzt an kleine Displays an: größere Tippflächen, lesbare Schrift und keine abgeschnittenen Menüs mehr.",
+    "Die Topbar zeigt auf dem Handy nur noch Titel, 🌙 und ⚙️ – Hintergrund, Export, Import, „Was ist neu?“ und Abmelden stecken im neuen ⋯-Menü.",
+    "Auf dem Board füllt eine Spalte fast den Bildschirm, die nächste erreichst du durch Wischen zur Seite.",
+    "↔️ Aufgabe in eine andere Spalte verschieben: im Aufgabenfenster oben auf die farbige Spalten-Marke tippen – Drag & Drop gibt es auf dem Touchscreen ja nicht. Nach dem Schließen springt das Board zur Aufgabe und hebt sie kurz hervor.",
+    "Das Aufgabenfenster öffnet sich auf dem Handy als Blatt von unten; der Kalender zeigt fällige Aufgaben als farbige Balken.",
+    "Schaltflächen, die am PC erst beim Überfahren mit der Maus erscheinen (✏️ Umbenennen, ⋮ Menü, ✕ Löschen), sind auf Touch-Geräten dauerhaft sichtbar."
+  ]},
   { version: 9, date: "14.08.2026", title: "Anmeldung mit Passwort", items: [
     "🔑 Du kannst dich jetzt mit E-Mail + Passwort anmelden – schneller als der Code-Weg.",
     "Passwort festlegen: einmal anmelden, dann im ⚙️-Menü „Passwort festlegen / ändern“ wählen. Einzige Regel: mindestens 6 Zeichen.",
@@ -3347,6 +3610,8 @@ const newsDot = document.getElementById("news-dot");
 function updateNewsDot() {
   const seen = parseInt(localStorage.getItem(NEWS_SEEN_KEY) || "0", 10);
   newsDot.hidden = seen >= CHANGELOG[0].version;
+  // Auf dem Handy steckt „Was ist neu?“ im ⋯-Menü – Punkt dort anzeigen
+  document.getElementById("more-dot").hidden = newsDot.hidden;
 }
 
 function openNews() {
@@ -3397,8 +3662,22 @@ let cloudSaveTimer = null;
 
 const cloudStatusEl = document.getElementById("cloud-status");
 function setCloudStatus(text, title) {
-  cloudStatusEl.textContent = text;
-  cloudStatusEl.title = title || "";
+  // Symbol und Text getrennt: auf schmalen Displays bleibt nur das Symbol stehen
+  const m = text.match(/^(\S*[^\x00-\x7F]\S*)\s+(.*)$/);
+  cloudStatusEl.textContent = "";
+  const icon = document.createElement("span");
+  icon.className = "cs-icon";
+  const label = document.createElement("span");
+  label.className = "cs-text";
+  if (m) {
+    icon.textContent = m[1];
+    label.textContent = " " + m[2];
+  } else {
+    icon.textContent = "•";
+    label.textContent = " " + text;
+  }
+  cloudStatusEl.append(icon, label);
+  cloudStatusEl.title = title || text;
 }
 
 function scheduleCloudSave() {
@@ -3582,7 +3861,7 @@ document.getElementById("login-back").addEventListener("click", () => {
 
 document.getElementById("login-offline").addEventListener("click", () => {
   loginOverlay.hidden = true;
-  setCloudStatus("nur lokal", "Ohne Konto: Daten liegen nur in diesem Browser");
+  setCloudStatus("💻 nur lokal", "Ohne Konto: Daten liegen nur in diesem Browser");
 });
 
 document.getElementById("btn-logout").addEventListener("click", async () => {
@@ -3634,7 +3913,7 @@ async function initApp() {
   if (runAutoArchive()) { /* abgelaufene Erledigt-Aufgaben direkt wegräumen */ }
   render();
   if (!sb) {
-    setCloudStatus("nur lokal", "Cloud-Funktion nicht verfügbar (kein Internet?)");
+    setCloudStatus("💻 nur lokal", "Cloud-Funktion nicht verfügbar (kein Internet?)");
     return;
   }
   const { data } = await sb.auth.getSession();
