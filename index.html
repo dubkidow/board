@@ -288,8 +288,30 @@
     cursor: pointer;
     border: 1px solid var(--edge);
     transition: transform .15s, box-shadow .15s;
+    position: relative;
   }
   .pinned-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .pinned-card.dragging { opacity: .4; }
+  .pinned-card.drag-over-tile { outline: 2px dashed var(--accent); outline-offset: 4px; }
+  .pinned-card .p-move {
+    position: absolute;
+    top: 7px; right: 8px;
+    display: flex;
+    gap: 2px;
+    visibility: hidden;
+  }
+  .pinned-card:hover .p-move { visibility: visible; }
+  .pinned-card .p-move button {
+    background: var(--hover-soft);
+    border: none;
+    border-radius: 6px;
+    width: 22px; height: 22px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-light);
+    cursor: pointer;
+  }
+  .pinned-card .p-move button:hover { background: var(--hover); color: var(--text); }
   .pinned-card .p-title {
     font-size: 13.5px;
     font-weight: 500;
@@ -1026,7 +1048,7 @@
     cursor: pointer;
   }
   .cal-chip:hover { filter: brightness(1.1); }
-  .cal-chip.cal-over { outline: 2px solid #e5484d; outline-offset: -2px; }
+  .cal-chip.cal-over { outline: 2px solid var(--due-over, #e5484d); outline-offset: -2px; }
   .cal-more { font-size: 10.5px; color: var(--text-light); }
 
   /* ---------- Archiv ---------- */
@@ -1147,10 +1169,8 @@
     padding: 1px 6px;
     background: var(--hover-soft);
   }
-  .due-badge.due-today { background: #ffe4c2; color: #9a5b00; font-weight: 600; }
-  .due-badge.due-over { background: #ffd9d6; color: #b3261e; font-weight: 600; }
-  body.dark .due-badge.due-today { background: #4a3517; color: #ffc069; }
-  body.dark .due-badge.due-over { background: #4a1f1c; color: #ff8a80; }
+  .due-badge.due-today { background: var(--due-today, #f9a825); color: #fff; font-weight: 600; }
+  .due-badge.due-over { background: var(--due-over, #e5484d); color: #fff; font-weight: 600; }
 
   /* Abschließen-Button im Aufgabenfenster */
   #m-complete {
@@ -1183,6 +1203,15 @@
   }
   .dropdown .opt-row:hover { background: var(--hover-soft); }
   .dropdown .opt-row input { accent-color: var(--accent); cursor: pointer; }
+  .dropdown .opt-row input.opt-color {
+    width: 26px; height: 22px;
+    padding: 0;
+    border: 1px solid var(--input-border);
+    border-radius: 5px;
+    background: none;
+  }
+  .dropdown .opt-row input.opt-color::-webkit-color-swatch-wrapper { padding: 2px; }
+  .dropdown .opt-row input.opt-color::-webkit-color-swatch { border: none; border-radius: 3px; }
   .dropdown .opt-hint { font-size: 11px; color: var(--text-light); padding: 0 10px 6px; max-width: 240px; white-space: normal; }
   .news-entry { margin-top: 16px; }
   .news-entry .n-date { font-size: 11.5px; color: var(--text-light); }
@@ -1218,6 +1247,7 @@
     .check-item .ci-del,
     .link-item .li-del,
     .comment .c-del,
+    .pinned-card .p-move,
     .dropdown .item .tag-tools { visibility: visible; }
     /* Hover-Effekte fühlen sich auf Touch wie „hängengeblieben“ an */
     .board-tile:hover, .pinned-card:hover, .card:hover,
@@ -1231,6 +1261,7 @@
     .check-item .ci-del, .link-item .li-del, .comment .c-del { font-size: 14px; padding: 2px 6px; }
     .check-item { padding: 8px; }
     .check-item input[type=checkbox] { width: 19px; height: 19px; }
+    .pinned-card .p-move button { width: 30px; height: 30px; font-size: 17px; }
   }
 
   /* ---------- Schmale Topbar ---------- */
@@ -1583,6 +1614,16 @@ function taskCount(board) {
   return board.columns.reduce((n, c) => n + c.tasks.length, 0);
 }
 
+const DUE_COLOR_TODAY = "#f9a825";
+const DUE_COLOR_OVER = "#e5484d";
+
+// Gewählte Fälligkeits-Farben als CSS-Variablen setzen (Karten-Badges + Kalender)
+function applyDueColors() {
+  const s = settings();
+  document.documentElement.style.setProperty("--due-today", s.dueColorToday);
+  document.documentElement.style.setProperty("--due-over", s.dueColorOver);
+}
+
 // Einstellungen mit Standardwerten (synchronisieren mit in die Cloud)
 function settings() {
   if (!state.settings) state.settings = {};
@@ -1593,6 +1634,8 @@ function settings() {
   if (s.autoArchive == null) s.autoArchive = false;
   if (s.sidePinned == null) s.sidePinned = false;
   if (s.sideCalendar == null) s.sideCalendar = false;
+  if (s.dueColorToday == null) s.dueColorToday = DUE_COLOR_TODAY;
+  if (s.dueColorOver == null) s.dueColorOver = DUE_COLOR_OVER;
   return s;
 }
 
@@ -1661,6 +1704,7 @@ function applyTheme() {
 
 function applyBg() {
   applyTheme();
+  applyDueColors();
   if (state.homeBg === "eigenes") {
     const img = state.bgImage;
     if (img) {
@@ -1889,14 +1933,7 @@ function renderHome() {
 
   // --- Angepinnte Aufgaben ---
   pinnedList.innerHTML = "";
-  const pinned = [];
-  for (const b of state.boards) {
-    for (const col of b.columns) {
-      for (const t of col.tasks) {
-        if (t.pinned) pinned.push({ board: b, col, task: t });
-      }
-    }
-  }
+  const pinned = collectPinned();
   if (!pinned.length) {
     const empty = document.createElement("div");
     empty.className = "pinned-empty";
@@ -2165,6 +2202,40 @@ function renderAddTile() {
   return tile;
 }
 
+// Alle angepinnten Aufgaben, sortiert nach der vom Nutzer gewählten Reihenfolge
+function collectPinned() {
+  const pinned = [];
+  for (const b of state.boards) {
+    for (const col of b.columns) {
+      for (const t of col.tasks) {
+        if (t.pinned) pinned.push({ board: b, col, task: t });
+      }
+    }
+  }
+  const order = state.pinnedOrder || [];
+  const idx = p => { const i = order.indexOf(p.task.id); return i === -1 ? Infinity : i; };
+  pinned.sort((a, b) => idx(a) - idx(b));
+  return pinned;
+}
+
+function setPinnedOrder(ids) {
+  state.pinnedOrder = ids;
+  save();
+  render();
+}
+
+function movePinnedBy(taskId, delta) {
+  const ids = collectPinned().map(p => p.task.id);
+  const i = ids.indexOf(taskId);
+  const j = i + delta;
+  if (i === -1 || j < 0 || j >= ids.length) return;
+  ids.splice(i, 1);
+  ids.splice(j, 0, taskId);
+  setPinnedOrder(ids);
+}
+
+let dragPinId = null;
+
 function renderPinnedCard(p) {
   const card = document.createElement("div");
   card.className = "pinned-card";
@@ -2202,7 +2273,61 @@ function renderPinnedCard(p) {
     meta.appendChild(c);
   }
 
-  card.append(title, meta);
+  // Pfeile zum Sortieren (am PC per Hover, auf Touch immer sichtbar)
+  const moveWrap = document.createElement("div");
+  moveWrap.className = "p-move";
+  const mkArrow = (label, delta, title2) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.title = title2;
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      movePinnedBy(p.task.id, delta);
+    });
+    moveWrap.appendChild(b);
+  };
+  mkArrow("‹", -1, "Nach vorne verschieben");
+  mkArrow("›", 1, "Nach hinten verschieben");
+
+  // Sortieren per Drag & Drop
+  card.draggable = true;
+  card.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/pin", p.task.id);
+    e.dataTransfer.effectAllowed = "move";
+    dragType = "pin";
+    dragPinId = p.task.id;
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => {
+    dragType = null; dragPinId = null;
+    card.classList.remove("dragging");
+    document.querySelectorAll(".pinned-card.drag-over-tile")
+      .forEach(c => c.classList.remove("drag-over-tile"));
+  });
+  card.addEventListener("dragover", e => {
+    if (dragType === "pin" && dragPinId !== p.task.id) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      card.classList.add("drag-over-tile");
+    }
+  });
+  card.addEventListener("dragleave", e => {
+    if (!card.contains(e.relatedTarget)) card.classList.remove("drag-over-tile");
+  });
+  card.addEventListener("drop", e => {
+    e.preventDefault();
+    if (dragType === "pin" && dragPinId && dragPinId !== p.task.id) {
+      const ids = collectPinned().map(x => x.task.id);
+      const from = ids.indexOf(dragPinId);
+      const to = ids.indexOf(p.task.id);
+      const [moved] = ids.splice(from, 1);
+      ids.splice(to, 0, moved);
+      dragType = null; dragPinId = null;
+      setPinnedOrder(ids);
+    }
+  });
+
+  card.append(title, meta, moveWrap);
   card.addEventListener("click", () => {
     openBoard(p.board.id);
     openModal(p.task.id);
@@ -3392,6 +3517,45 @@ function openOptionsMenu(anchor) {
   mkToggle("📌 Angepinnte rechts neben den Boards", "sidePinned");
   mkToggle("🗓️ Kalender rechts neben den Boards", "sideCalendar");
 
+  const sepC = document.createElement("div");
+  sepC.className = "sep";
+  dd.appendChild(sepC);
+  const headC = document.createElement("div");
+  headC.className = "opt-hint";
+  headC.textContent = "Fälligkeits-Farben (Karten + Kalender):";
+  dd.appendChild(headC);
+
+  const mkColorRow = (label, key) => {
+    const row = document.createElement("label");
+    row.className = "opt-row";
+    const inp = document.createElement("input");
+    inp.type = "color";
+    inp.className = "opt-color";
+    inp.value = s[key];
+    inp.addEventListener("input", () => {
+      s[key] = inp.value;
+      save();
+      applyDueColors();
+      render();
+    });
+    row.append(inp, document.createTextNode(label));
+    dd.appendChild(row);
+  };
+  mkColorRow("Heute fällig", "dueColorToday");
+  mkColorRow("Überfällig", "dueColorOver");
+  const resetC = document.createElement("div");
+  resetC.className = "item";
+  resetC.textContent = "Standardfarben wiederherstellen";
+  resetC.addEventListener("click", () => {
+    s.dueColorToday = DUE_COLOR_TODAY;
+    s.dueColorOver = DUE_COLOR_OVER;
+    save();
+    applyDueColors();
+    render();
+    openOptionsMenu(anchor);
+  });
+  dd.appendChild(resetC);
+
   if (cloudUser) {
     const sep2 = document.createElement("div");
     sep2.className = "sep";
@@ -3616,6 +3780,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 13, date: "17.08.2026", title: "Angepinnte sortieren & Fälligkeits-Farben", items: [
+    "📌 Angepinnte Aufgaben auf der Startseite lassen sich jetzt sortieren – am PC per Ziehen, am Handy über die ‹ ›-Pfeile auf der Karte.",
+    "🎨 Die Farben für „heute fällig“ und „überfällig“ sind im ⚙️-Menü einstellbar – sie gelten für die Karten-Badges und den Kalender."
+  ]},
   { version: 12, date: "17.08.2026", title: "Boards am Handy sortieren", items: [
     "↔️ Board-Kacheln lassen sich jetzt auch ohne Maus umsortieren: im ⋮-Menü der Kachel „Nach vorne/hinten verschieben“ wählen – praktisch am Handy, wo es kein Drag & Drop gibt.",
     "Die Spalten im Board konnten das schon (⋮-Menü der Spalte)."
