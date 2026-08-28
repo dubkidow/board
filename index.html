@@ -1240,6 +1240,42 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(31,45,61,.4); }
   ::-webkit-scrollbar-track { background: transparent; }
 
+  /* Hinweis-Balken für fällige Sicherung */
+  #backup-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--modal-bg);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    z-index: 150;
+    max-width: calc(100vw - 24px);
+  }
+  #backup-banner button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #backup-banner button:hover { filter: brightness(.95); }
+  #backup-banner .bb-close {
+    background: none;
+    color: var(--text-light);
+    font-size: 17px;
+    padding: 2px 6px;
+  }
+  #backup-banner .bb-close:hover { background: var(--hover); color: var(--text); filter: none; }
+
   /* Menü „⋯“ nur auf schmalen Displays */
   #btn-more { display: none; position: relative; }
   #more-dot {
@@ -3626,6 +3662,31 @@ function openOptionsMenu(anchor) {
   });
   dd.appendChild(resetC);
 
+  const sepB = document.createElement("div");
+  sepB.className = "sep";
+  dd.appendChild(sepB);
+  const headB = document.createElement("div");
+  headB.className = "opt-hint";
+  headB.textContent = "Sicherung (auf diesem Gerät):";
+  dd.appendChild(headB);
+  const mkAction = (label, fn) => {
+    const it = document.createElement("div");
+    it.className = "item";
+    it.textContent = label;
+    it.addEventListener("click", () => { closeDropdown(); fn(); });
+    dd.appendChild(it);
+  };
+  if (!backupEnabled()) {
+    mkAction("💾 Automatische Sicherung einrichten…", setupAutoBackup);
+  } else {
+    mkAction("💾 Jetzt sichern", backupNow);
+    mkAction("Anderen Sicherungs-Ordner wählen…", setupAutoBackup);
+    mkAction("Automatische Sicherung ausschalten", () => {
+      disableAutoBackup();
+      alert("Automatische Sicherung ausgeschaltet. Vorhandene Sicherungsdateien bleiben in deinem Ordner erhalten.");
+    });
+  }
+
   if (cloudUser) {
     const sep2 = document.createElement("div");
     sep2.className = "sep";
@@ -3800,6 +3861,141 @@ function formatDate(ts) {
   }) + " Uhr";
 }
 
+/* ================= Automatische Sicherung ================= */
+/* Schreibt wöchentlich eine JSON-Sicherung in einen vom Nutzer gewählten
+   Ordner (File System Access API, Chrome/Edge am PC). Der Ordner-Zugriff
+   wird in IndexedDB gemerkt; die letzten 8 Sicherungen bleiben erhalten. */
+
+const BK_ENABLED_KEY = "kanban-backup-enabled";
+const BK_LAST_KEY = "kanban-backup-last";
+const BK_INTERVAL = 7 * 24 * 3600 * 1000;
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("kanban-backup", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("kv", "readwrite");
+    tx.objectStore("kv").put(val, key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("kv", "readonly");
+    const rq = tx.objectStore("kv").get(key);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+
+function backupSupported() { return typeof window.showDirectoryPicker === "function"; }
+function backupEnabled() { return localStorage.getItem(BK_ENABLED_KEY) === "1"; }
+
+async function writeBackup(dir) {
+  const name = "board-sicherung-" + todayStr() + ".json";
+  const fh = await dir.getFileHandle(name, { create: true });
+  const w = await fh.createWritable();
+  await w.write(JSON.stringify(state, null, 2));
+  await w.close();
+  localStorage.setItem(BK_LAST_KEY, String(Date.now()));
+  await cleanupBackups(dir);
+  return name;
+}
+
+// Nur die letzten 8 Sicherungen behalten
+async function cleanupBackups(dir) {
+  try {
+    const names = [];
+    for await (const [n, h] of dir.entries()) {
+      if (h.kind === "file" && /^board-sicherung-\d{4}-\d{2}-\d{2}\.json$/.test(n)) names.push(n);
+    }
+    names.sort();
+    while (names.length > 8) await dir.removeEntry(names.shift());
+  } catch (e) { /* Aufräumen ist optional */ }
+}
+
+async function setupAutoBackup() {
+  if (!backupSupported()) {
+    alert("Dieser Browser unterstützt das automatische Speichern in einen Ordner nicht (z. B. Firefox oder Handy-Browser). Nutze hier bitte den Export-Knopf – oder richte die Sicherung in Chrome/Edge am PC ein.");
+    return;
+  }
+  try {
+    const dir = await showDirectoryPicker({ id: "kanban-backup", mode: "readwrite" });
+    await idbSet("dir", dir);
+    localStorage.setItem(BK_ENABLED_KEY, "1");
+    const name = await writeBackup(dir);
+    alert("Automatische Sicherung eingerichtet – die erste Sicherung (" + name + ") liegt schon im Ordner.\n\nAb jetzt wird wöchentlich beim Öffnen des Boards eine neue Sicherung geschrieben; die letzten 8 bleiben erhalten. Tipp: Wähle im Browser-Hinweis „Bei jedem Besuch zulassen“, dann läuft es künftig ganz ohne Nachfrage.");
+  } catch (e) { /* Auswahl abgebrochen */ }
+}
+
+async function backupNow() {
+  let dir = await idbGet("dir").catch(() => null);
+  if (!dir) { await setupAutoBackup(); return; }
+  try {
+    if (await dir.queryPermission({ mode: "readwrite" }) !== "granted" &&
+        await dir.requestPermission({ mode: "readwrite" }) !== "granted") return;
+    const name = await writeBackup(dir);
+    alert("Sicherung erstellt: " + name);
+  } catch (e) {
+    alert("Sicherung fehlgeschlagen: " + e.message + "\nRichte die Sicherung ggf. neu ein (Ordner wählen).");
+  }
+}
+
+function disableAutoBackup() {
+  localStorage.removeItem(BK_ENABLED_KEY);
+}
+
+// Beim Start: fällige Sicherung schreiben (still, wenn der Browser die
+// Ordner-Erlaubnis dauerhaft erteilt hat – sonst kleiner Hinweis-Balken)
+async function checkAutoBackup() {
+  if (!backupEnabled() || !backupSupported()) return;
+  const last = +(localStorage.getItem(BK_LAST_KEY) || 0);
+  if (Date.now() - last < BK_INTERVAL) return;
+  const dir = await idbGet("dir").catch(() => null);
+  if (!dir) return;
+  try {
+    if (await dir.queryPermission({ mode: "readwrite" }) === "granted") {
+      await writeBackup(dir);
+      return;
+    }
+  } catch (e) { /* weiter zum Hinweis */ }
+  showBackupBanner(dir);
+}
+
+function showBackupBanner(dir) {
+  if (document.getElementById("backup-banner")) return;
+  const bar = document.createElement("div");
+  bar.id = "backup-banner";
+  const txt = document.createElement("span");
+  txt.textContent = "💾 Wöchentliche Sicherung fällig";
+  const btn = document.createElement("button");
+  btn.textContent = "Jetzt sichern";
+  btn.addEventListener("click", async () => {
+    try {
+      if (await dir.requestPermission({ mode: "readwrite" }) === "granted") {
+        await writeBackup(dir);
+        bar.remove();
+      }
+    } catch (e) { alert("Sicherung fehlgeschlagen: " + e.message); }
+  });
+  const close = document.createElement("button");
+  close.className = "bb-close";
+  close.textContent = "×";
+  close.title = "Später erinnern";
+  close.addEventListener("click", () => bar.remove());
+  bar.append(txt, btn, close);
+  document.body.appendChild(bar);
+}
+
 /* ================= Export / Import ================= */
 
 document.getElementById("btn-export").addEventListener("click", () => {
@@ -3850,6 +4046,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 15, date: "17.08.2026", title: "Automatische Sicherung", items: [
+    "💾 Das Board kann sich jetzt selbst sichern: im ⚙️-Menü „Automatische Sicherung einrichten“ wählen und einen Ordner bestimmen (z. B. OneDrive) – ab dann landet dort wöchentlich eine Sicherungsdatei, die letzten 8 bleiben erhalten.",
+    "Funktioniert in Chrome/Edge am PC; unterwegs hilft weiter der Export-Knopf. Tipp: Beim Browser-Hinweis „Bei jedem Besuch zulassen“ wählen, dann läuft alles ohne Nachfrage."
+  ]},
   { version: 14, date: "17.08.2026", title: "Dritte Fälligkeits-Stufe: bald fällig", items: [
     "🟡 Neue Warnstufe „bald fällig“: Aufgaben, deren Termin näher rückt, werden schon vorher farblich markiert – auf den Karten und im Kalender.",
     "⏱️ Der Vorlauf ist im ⚙️-Menü einstellbar (aus, 1–14 Tage; Standard: 3 Tage), die Farbe frei wählbar.",
@@ -4233,6 +4433,7 @@ async function initApp() {
   render();
   if (!sb) {
     setCloudStatus("💻 nur lokal", "Cloud-Funktion nicht verfügbar (kein Internet?)");
+    checkAutoBackup();
     return;
   }
   const { data } = await sb.auth.getSession();
@@ -4241,6 +4442,8 @@ async function initApp() {
   } else {
     loginOverlay.hidden = false;
   }
+  // Erst nach dem Cloud-Abgleich sichern, damit der neueste Stand in die Datei kommt
+  checkAutoBackup();
 }
 initApp();
 </script>
