@@ -1049,6 +1049,7 @@
   }
   .cal-chip:hover { filter: brightness(1.1); }
   .cal-chip.cal-over { outline: 2px solid var(--due-over, #e5484d); outline-offset: -2px; }
+  .cal-chip.cal-soon { outline: 2px solid var(--due-soon, #fdd835); outline-offset: -2px; }
   .cal-more { font-size: 10.5px; color: var(--text-light); }
 
   /* ---------- Archiv ---------- */
@@ -1169,8 +1170,9 @@
     padding: 1px 6px;
     background: var(--hover-soft);
   }
-  .due-badge.due-today { background: var(--due-today, #f9a825); color: #fff; font-weight: 600; }
-  .due-badge.due-over { background: var(--due-over, #e5484d); color: #fff; font-weight: 600; }
+  .due-badge.due-today { background: var(--due-today, #f9a825); color: var(--due-today-text, #fff); font-weight: 600; }
+  .due-badge.due-over { background: var(--due-over, #e5484d); color: var(--due-over-text, #fff); font-weight: 600; }
+  .due-badge.due-soon { background: var(--due-soon, #fdd835); color: var(--due-soon-text, #1f2d3d); font-weight: 600; }
 
   /* Abschließen-Button im Aufgabenfenster */
   #m-complete {
@@ -1212,6 +1214,16 @@
   }
   .dropdown .opt-row input.opt-color::-webkit-color-swatch-wrapper { padding: 2px; }
   .dropdown .opt-row input.opt-color::-webkit-color-swatch { border: none; border-radius: 3px; }
+  .dropdown .opt-row select.opt-select {
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    cursor: pointer;
+  }
   .dropdown .opt-hint { font-size: 11px; color: var(--text-light); padding: 0 10px 6px; max-width: 240px; white-space: normal; }
   .news-entry { margin-top: 16px; }
   .news-entry .n-date { font-size: 11.5px; color: var(--text-light); }
@@ -1616,12 +1628,28 @@ function taskCount(board) {
 
 const DUE_COLOR_TODAY = "#f9a825";
 const DUE_COLOR_OVER = "#e5484d";
+const DUE_COLOR_SOON = "#fdd835";
+const DUE_SOON_DAYS = 3;
+
+// Passende Schriftfarbe (dunkel/hell) zur gewählten Hintergrundfarbe
+function textColorFor(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return "#fff";
+  const n = parseInt(m[1], 16);
+  const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1f2d3d" : "#fff";
+}
 
 // Gewählte Fälligkeits-Farben als CSS-Variablen setzen (Karten-Badges + Kalender)
 function applyDueColors() {
   const s = settings();
-  document.documentElement.style.setProperty("--due-today", s.dueColorToday);
-  document.documentElement.style.setProperty("--due-over", s.dueColorOver);
+  const st = document.documentElement.style;
+  st.setProperty("--due-today", s.dueColorToday);
+  st.setProperty("--due-today-text", textColorFor(s.dueColorToday));
+  st.setProperty("--due-over", s.dueColorOver);
+  st.setProperty("--due-over-text", textColorFor(s.dueColorOver));
+  st.setProperty("--due-soon", s.dueColorSoon);
+  st.setProperty("--due-soon-text", textColorFor(s.dueColorSoon));
 }
 
 // Einstellungen mit Standardwerten (synchronisieren mit in die Cloud)
@@ -1636,6 +1664,8 @@ function settings() {
   if (s.sideCalendar == null) s.sideCalendar = false;
   if (s.dueColorToday == null) s.dueColorToday = DUE_COLOR_TODAY;
   if (s.dueColorOver == null) s.dueColorOver = DUE_COLOR_OVER;
+  if (s.dueColorSoon == null) s.dueColorSoon = DUE_COLOR_SOON;
+  if (s.dueSoonDays == null) s.dueSoonDays = DUE_SOON_DAYS;
   return s;
 }
 
@@ -1660,10 +1690,21 @@ function formatDue(due) {
   return y === String(new Date().getFullYear()) ? `${d}.${m}.` : `${d}.${m}.${y.slice(2)}`;
 }
 
+// Letzter Tag, der noch als "bald fällig" gilt (heute + eingestellter Vorlauf)
+function dueSoonLimit() {
+  const days = settings().dueSoonDays;
+  if (!days) return null;
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
 function dueClass(due) {
   const t = todayStr();
   if (due < t) return " due-over";
   if (due === t) return " due-today";
+  const limit = dueSoonLimit();
+  if (limit && due <= limit) return " due-soon";
   return "";
 }
 
@@ -2033,12 +2074,17 @@ function renderCalendar() {
 
       const entries = dueMap[ds] || [];
       const MAX = 3;
+      const soonLimit = dueSoonLimit();
       for (const entry of entries.slice(0, MAX)) {
         const chip = document.createElement("span");
-        chip.className = "cal-chip" + (ds < todayS ? " cal-over" : "");
+        let status = "";
+        if (ds < todayS) status = " cal-over";
+        else if (ds > todayS && soonLimit && ds <= soonLimit) status = " cal-soon";
+        chip.className = "cal-chip" + status;
         chip.style.background = entry.board.color;
         chip.textContent = entry.task.title;
-        chip.title = entry.task.title + "  (" + entry.board.name + (ds < todayS ? ", überfällig" : "") + ")";
+        chip.title = entry.task.title + "  (" + entry.board.name +
+          (status === " cal-over" ? ", überfällig" : status === " cal-soon" ? ", bald fällig" : "") + ")";
         chip.addEventListener("click", () => {
           openBoard(entry.board.id);
           openModal(entry.task.id);
@@ -3541,14 +3587,38 @@ function openOptionsMenu(anchor) {
     row.append(inp, document.createTextNode(label));
     dd.appendChild(row);
   };
-  mkColorRow("Heute fällig", "dueColorToday");
   mkColorRow("Überfällig", "dueColorOver");
+  mkColorRow("Heute fällig", "dueColorToday");
+  mkColorRow("Bald fällig", "dueColorSoon");
+
+  // Vorlauf für "bald fällig" einstellen
+  const soonRow = document.createElement("label");
+  soonRow.className = "opt-row";
+  const soonSel = document.createElement("select");
+  soonSel.className = "opt-select";
+  for (const [v, label] of [[0, "aus"], [1, "1 Tag"], [2, "2 Tage"], [3, "3 Tage"], [5, "5 Tage"], [7, "1 Woche"], [14, "2 Wochen"]]) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = label;
+    if (s.dueSoonDays === v) o.selected = true;
+    soonSel.appendChild(o);
+  }
+  soonSel.addEventListener("change", () => {
+    s.dueSoonDays = +soonSel.value;
+    save();
+    render();
+  });
+  soonRow.append(soonSel, document.createTextNode("Vorlauf für „bald fällig“"));
+  dd.appendChild(soonRow);
+
   const resetC = document.createElement("div");
   resetC.className = "item";
   resetC.textContent = "Standardfarben wiederherstellen";
   resetC.addEventListener("click", () => {
     s.dueColorToday = DUE_COLOR_TODAY;
     s.dueColorOver = DUE_COLOR_OVER;
+    s.dueColorSoon = DUE_COLOR_SOON;
+    s.dueSoonDays = DUE_SOON_DAYS;
     save();
     applyDueColors();
     render();
@@ -3780,6 +3850,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 14, date: "17.08.2026", title: "Dritte Fälligkeits-Stufe: bald fällig", items: [
+    "🟡 Neue Warnstufe „bald fällig“: Aufgaben, deren Termin näher rückt, werden schon vorher farblich markiert – auf den Karten und im Kalender.",
+    "⏱️ Der Vorlauf ist im ⚙️-Menü einstellbar (aus, 1–14 Tage; Standard: 3 Tage), die Farbe frei wählbar.",
+    "Die Schriftfarbe der Fälligkeits-Badges passt sich jetzt automatisch an helle und dunkle Wunschfarben an."
+  ]},
   { version: 13, date: "17.08.2026", title: "Angepinnte sortieren & Fälligkeits-Farben", items: [
     "📌 Angepinnte Aufgaben auf der Startseite lassen sich jetzt sortieren – am PC per Ziehen, am Handy über die ‹ ›-Pfeile auf der Karte.",
     "🎨 Die Farben für „heute fällig“ und „überfällig“ sind im ⚙️-Menü einstellbar – sie gelten für die Karten-Badges und den Kalender."
