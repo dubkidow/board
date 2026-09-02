@@ -968,6 +968,79 @@
     overflow-y: auto;
   }
 
+  /* ---------- Notizen (Sticky Notes) ---------- */
+  .notes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .note {
+    position: relative;
+    border-radius: 3px;
+    padding: 14px 14px 30px;
+    min-height: 130px;
+    box-shadow: 2px 4px 10px rgba(31,45,61,.18);
+    transform: rotate(-.8deg);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .note:nth-child(even) { transform: rotate(.9deg); }
+  .note:hover { transform: rotate(0) translateY(-2px); box-shadow: 3px 6px 16px rgba(31,45,61,.25); }
+  .note .n-text {
+    outline: none;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #33475b;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 95px;
+  }
+  .note .n-text:empty::before {
+    content: attr(data-placeholder);
+    color: rgba(51,71,91,.45);
+  }
+  .note .n-del {
+    position: absolute;
+    top: 5px; right: 6px;
+    background: none; border: none;
+    font-size: 15px;
+    color: rgba(51,71,91,.55);
+    cursor: pointer;
+    padding: 2px 6px;
+    visibility: hidden;
+  }
+  .note:hover .n-del { visibility: visible; }
+  .note .n-del:hover { color: #d64545; }
+  .note .n-colors {
+    position: absolute;
+    left: 12px; bottom: 9px;
+    display: flex;
+    gap: 5px;
+    visibility: hidden;
+  }
+  .note:hover .n-colors { visibility: visible; }
+  .note .n-colors .nc-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid rgba(51,71,91,.25);
+  }
+  .note .n-colors .nc-dot:hover { transform: scale(1.25); }
+  .note.note-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 2px dashed rgba(47,125,225,.5);
+    box-shadow: none;
+    transform: none;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: 130px;
+  }
+  .note.note-add:hover { background: rgba(47,125,225,.06); transform: none; }
+
   /* ---------- Kalender (Startseite) ---------- */
   .cal-head {
     display: flex;
@@ -1296,6 +1369,8 @@
     .link-item .li-del,
     .comment .c-del,
     .pinned-card .p-move,
+    .note .n-del,
+    .note .n-colors,
     .dropdown .item .tag-tools { visibility: visible; }
     /* Hover-Effekte fühlen sich auf Touch wie „hängengeblieben“ an */
     .board-tile:hover, .pinned-card:hover, .card:hover,
@@ -1437,7 +1512,11 @@
       <h2>📌 Angepinnte Aufgaben</h2>
       <div class="pinned-list" id="pinned-list"></div>
     </div>
-    <div class="section" id="cal-section" hidden>
+    <div class="section" id="notes-section" hidden>
+    <h2>🗒️ Notizen</h2>
+    <div class="notes-list" id="notes-list"></div>
+  </div>
+  <div class="section" id="cal-section" hidden>
       <div class="cal-head">
         <h2>🗓️ Kalender</h2>
         <span id="cal-title"></span>
@@ -1698,6 +1777,8 @@ function settings() {
   if (s.autoArchive == null) s.autoArchive = false;
   if (s.sidePinned == null) s.sidePinned = false;
   if (s.sideCalendar == null) s.sideCalendar = false;
+  if (s.showNotes == null) s.showNotes = true;
+  if (s.sideNotes == null) s.sideNotes = false;
   if (s.dueColorToday == null) s.dueColorToday = DUE_COLOR_TODAY;
   if (s.dueColorOver == null) s.dueColorOver = DUE_COLOR_OVER;
   if (s.dueColorSoon == null) s.dueColorSoon = DUE_COLOR_SOON;
@@ -1996,6 +2077,7 @@ function applyHomeLayout() {
   const main = document.getElementById("home-main");
   const side = document.getElementById("home-side");
   (s.sidePinned ? side : main).appendChild(document.getElementById("pinned-section"));
+  (s.sideNotes ? side : main).appendChild(document.getElementById("notes-section"));
   (s.sideCalendar ? side : main).appendChild(document.getElementById("cal-section"));
 }
 
@@ -2022,8 +2104,88 @@ function renderHome() {
     }
   }
 
-  // --- Kalender ---
+  // --- Notizen & Kalender ---
+  renderNotes();
   renderCalendar();
+}
+
+/* ---------- Notizen (Sticky Notes) ---------- */
+
+const NOTE_COLORS = ["#fff59d", "#ffe0b2", "#f8bbd0", "#e1bee7", "#b3e5fc", "#c8e6c9"];
+
+function renderNotes() {
+  const sec = document.getElementById("notes-section");
+  if (!settings().showNotes) { sec.hidden = true; return; }
+  sec.hidden = false;
+  const list = document.getElementById("notes-list");
+  list.innerHTML = "";
+  state.notes = state.notes || [];
+  for (const note of state.notes) list.appendChild(renderNote(note));
+
+  const add = document.createElement("div");
+  add.className = "note note-add";
+  add.textContent = "+ Notiz";
+  add.title = "Neue Notiz anlegen";
+  add.addEventListener("click", () => {
+    state.notes.push({ id: uid(), text: "", color: NOTE_COLORS[state.notes.length % NOTE_COLORS.length], createdAt: Date.now() });
+    save();
+    renderNotes();
+    const texts = list.querySelectorAll(".note .n-text");
+    if (texts.length) texts[texts.length - 1].focus();
+  });
+  list.appendChild(add);
+}
+
+function renderNote(note) {
+  const el = document.createElement("div");
+  el.className = "note";
+  el.style.background = note.color;
+
+  const txt = document.createElement("div");
+  txt.className = "n-text";
+  txt.spellcheck = false;
+  txt.dataset.placeholder = "Notiz schreiben…";
+  txt.textContent = note.text || "";
+  try { txt.contentEditable = "plaintext-only"; } catch (e) { txt.contentEditable = "true"; }
+  if (txt.contentEditable !== "plaintext-only") txt.contentEditable = "true";
+  // Beim Einfügen nur reinen Text übernehmen (keine Formatierungen)
+  txt.addEventListener("paste", e => {
+    e.preventDefault();
+    document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
+  });
+  txt.addEventListener("input", () => {
+    note.text = txt.innerText;
+    save();
+  });
+
+  const del = document.createElement("button");
+  del.className = "n-del";
+  del.textContent = "×";
+  del.title = "Notiz löschen";
+  del.addEventListener("click", () => {
+    if (note.text && note.text.trim() && !confirm("Diese Notiz löschen?")) return;
+    state.notes = state.notes.filter(n => n !== note);
+    save();
+    renderNotes();
+  });
+
+  const colors = document.createElement("div");
+  colors.className = "n-colors";
+  for (const c of NOTE_COLORS) {
+    const dot = document.createElement("span");
+    dot.className = "nc-dot";
+    dot.style.background = c;
+    dot.title = "Farbe wechseln";
+    dot.addEventListener("click", () => {
+      note.color = c;
+      el.style.background = c;
+      save();
+    });
+    colors.appendChild(dot);
+  }
+
+  el.append(txt, del, colors);
+  return el;
 }
 
 /* ---------- Kalender (Monatsübersicht mit Kalenderwochen) ---------- */
@@ -3581,6 +3743,7 @@ function openOptionsMenu(anchor) {
 
   mkToggle("📅 Fälligkeitsdaten", "showDue");
   mkToggle("🗓️ Kalender auf der Startseite", "showCalendar");
+  mkToggle("🗒️ Notizen auf der Startseite", "showNotes");
   mkToggle("🏷️ Tags", "showTags");
   mkToggle("🗄️ Automatisch archivieren", "autoArchive",
     "Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen, wandern ins Archiv.",
@@ -3597,6 +3760,7 @@ function openOptionsMenu(anchor) {
   head.textContent = "Aufbau der Startseite:";
   dd.appendChild(head);
   mkToggle("📌 Angepinnte rechts neben den Boards", "sidePinned");
+  mkToggle("🗒️ Notizen rechts neben den Boards", "sideNotes");
   mkToggle("🗓️ Kalender rechts neben den Boards", "sideCalendar");
 
   const sepC = document.createElement("div");
@@ -4046,6 +4210,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 16, date: "17.08.2026", title: "Notizen auf der Startseite", items: [
+    "🗒️ Sticky Notes: bunte Haftnotizen auf der Startseite – über „+ Notiz“ anlegen, direkt drauflos schreiben, Farbe über die Punkte unten wechseln.",
+    "Notizen synchronisieren mit deinem Konto und lassen sich im ⚙️-Menü ausblenden oder rechts neben die Boards legen."
+  ]},
   { version: 15, date: "17.08.2026", title: "Automatische Sicherung", items: [
     "💾 Das Board kann sich jetzt selbst sichern: im ⚙️-Menü „Automatische Sicherung einrichten“ wählen und einen Ordner bestimmen (z. B. OneDrive) – ab dann landet dort wöchentlich eine Sicherungsdatei, die letzten 8 bleiben erhalten.",
     "Funktioniert in Chrome/Edge am PC; unterwegs hilft weiter der Export-Knopf. Tipp: Beim Browser-Hinweis „Bei jedem Besuch zulassen“ wählen, dann läuft alles ohne Nachfrage."
