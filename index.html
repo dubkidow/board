@@ -935,7 +935,7 @@
     background: #ef5350;
     box-shadow: 0 0 0 2px var(--card-bg);
   }
-  #news-backdrop, #archive-backdrop {
+  #news-backdrop, #archive-backdrop, #search-backdrop {
     position: fixed; inset: 0;
     background: rgba(25,35,50,.35);
     backdrop-filter: blur(6px);
@@ -946,8 +946,8 @@
     padding: 8vh 16px;
     z-index: 250;
   }
-  #news-backdrop.open, #archive-backdrop.open { display: flex; }
-  #news-modal, #archive-modal {
+  #news-backdrop.open, #archive-backdrop.open, #search-backdrop.open { display: flex; }
+  #news-modal, #archive-modal, #search-modal {
     background: var(--modal-bg);
     border-radius: 18px;
     border: 1px solid var(--edge);
@@ -960,7 +960,39 @@
     overflow: hidden;
   }
   #archive-modal { width: 560px; }
-  #news-modal .n-head, #archive-modal .n-head {
+  #search-modal { width: 600px; }
+  #search-modal .n-head { gap: 10px; }
+  #search-input {
+    flex: 1;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+  }
+  #search-input:focus { border-color: var(--accent); }
+  .search-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    margin-top: 6px;
+    background: var(--hover-soft);
+    cursor: pointer;
+  }
+  .search-item:hover { background: var(--hover); }
+  .search-item .s-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .search-item .s-meta { font-size: 11.5px; color: var(--text-light); }
+  .search-empty { color: var(--text-light); font-size: 13.5px; margin-top: 14px; }
+  #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head {
     padding: 16px 22px;
     border-bottom: 1px solid var(--border-soft);
     display: flex;
@@ -968,9 +1000,10 @@
     justify-content: space-between;
   }
   #news-modal .n-head h2, #archive-modal .n-head h2 { font-size: 17px; }
-  #news-modal .n-body, #archive-modal .n-body {
+  #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body {
     padding: 4px 22px 20px;
     overflow-y: auto;
+    min-height: 120px;
   }
 
   /* ---------- Notizen (Sticky Notes) ---------- */
@@ -1318,7 +1351,60 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(31,45,61,.4); }
   ::-webkit-scrollbar-track { background: transparent; }
 
-  /* Hinweis-Balken für fällige Sicherung */
+  /* Duplizieren-Knopf + Wiederholen-Auswahl im Aufgabenfenster */
+  .m-foot .mf-btns { display: flex; gap: 8px; }
+  #m-duplicate {
+    background: none;
+    border: 1px solid var(--input-border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #m-duplicate:hover { background: var(--hover); }
+  #m-repeat {
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 6px 9px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    cursor: pointer;
+  }
+  #m-repeat:focus { border-color: var(--accent); }
+
+  /* Hinweis-Balken für fällige Sicherung + Rückgängig */
+  #undo-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--modal-bg);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    z-index: 260;
+    max-width: calc(100vw - 24px);
+  }
+  #undo-banner button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #undo-banner button:hover { filter: brightness(.95); }
+
   #backup-banner {
     position: fixed;
     left: 50%;
@@ -1462,10 +1548,10 @@
     .check-add button { padding: 9px 14px; }
 
     /* Weitere Fenster */
-    #news-backdrop, #archive-backdrop { padding: 5vh 10px; }
-    #news-modal, #archive-modal { max-height: 86dvh; }
-    #news-modal .n-head, #archive-modal .n-head { padding: 14px 16px; }
-    #news-modal .n-body, #archive-modal .n-body { padding: 4px 16px 18px; }
+    #news-backdrop, #archive-backdrop, #search-backdrop { padding: 5vh 10px; }
+    #news-modal, #archive-modal, #search-modal { max-height: 86dvh; }
+    #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head { padding: 14px 16px; }
+    #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body { padding: 4px 16px 18px; }
     .arch-item { flex-wrap: wrap; }
     .arch-item .a-info { flex: 1 1 100%; }
     .login-box { padding: 26px 22px; width: 100%; }
@@ -1495,6 +1581,7 @@
   <span id="cloud-status"></span>
   <button id="btn-logout" class="hide-narrow" hidden title="Vom Cloud-Konto abmelden">Abmelden</button>
   <button id="btn-news" class="hide-narrow" title="Was ist neu?">✨ Neu<span id="news-dot" hidden></span></button>
+  <button id="btn-search" title="Suchen in allen Boards (Strg+K)">🔍</button>
   <button id="btn-theme" title="Dunklen/hellen Modus umschalten">🌙</button>
   <button id="btn-options" title="Optionen: Funktionen ein-/ausschalten">⚙️</button>
   <button id="btn-bg" class="hide-narrow" title="Hintergrund ändern">🎨 Hintergrund</button>
@@ -1561,6 +1648,16 @@
   </div>
 </div>
 
+<div id="search-backdrop">
+  <div id="search-modal">
+    <div class="n-head">
+      <input id="search-input" placeholder="Suchen in Aufgaben, Notizen, Kommentaren, Archiv…" spellcheck="false">
+      <button class="m-close" id="search-close" title="Schließen">&times;</button>
+    </div>
+    <div class="n-body" id="search-results"></div>
+  </div>
+</div>
+
 <div id="pw-backdrop" hidden>
   <div class="login-box">
     <h2>🔑 Passwort festlegen</h2>
@@ -1609,6 +1706,15 @@
           <input type="date" id="m-due">
           <button id="m-due-clear" title="Fälligkeit entfernen" hidden>✕</button>
         </div>
+        <div id="m-repeat-wrap">
+          <h3>Wiederholen</h3>
+          <select id="m-repeat" title="Beim Abschließen wird die Aufgabe automatisch mit dem nächsten Termin neu angelegt (Fälligkeit nötig)">
+            <option value="">aus</option>
+            <option value="day">täglich</option>
+            <option value="week">wöchentlich</option>
+            <option value="month">monatlich</option>
+          </select>
+        </div>
         <div id="m-tags-wrap">
           <h3>Tags</h3>
           <div id="m-tags"></div>
@@ -1638,7 +1744,10 @@
     </div>
     <div class="m-foot">
       <span id="m-created"></span>
-      <button id="m-delete">Aufgabe löschen</button>
+      <div class="mf-btns">
+        <button id="m-duplicate" title="Kopie dieser Aufgabe in derselben Spalte anlegen">Duplizieren</button>
+        <button id="m-delete">Aufgabe löschen</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2177,10 +2286,15 @@ function renderNote(note) {
   del.textContent = "×";
   del.title = "Notiz löschen";
   del.addEventListener("click", () => {
-    if (note.text && note.text.trim() && !confirm("Diese Notiz löschen?")) return;
+    const index = state.notes.indexOf(note);
     state.notes = state.notes.filter(n => n !== note);
     save();
     renderNotes();
+    if (note.text && note.text.trim()) {
+      offerUndo("Notiz gelöscht", () => {
+        state.notes.splice(Math.min(index, state.notes.length), 0, note);
+      });
+    }
   });
 
   const colors = document.createElement("div");
@@ -2645,6 +2759,18 @@ function openBoardMenu(board, anchor, nameEl) {
     nameEl.focus();
     document.execCommand("selectAll", false, null);
   });
+  mkItem("Duplizieren", () => {
+    const copy = JSON.parse(JSON.stringify(board));
+    copy.id = uid();
+    copy.name = board.name + " (Kopie)";
+    copy.archive = [];
+    for (const c of copy.columns) {
+      c.id = uid();
+      for (const t of c.tasks) { t.id = uid(); t.pinned = false; }
+    }
+    state.boards.splice(state.boards.indexOf(board) + 1, 0, copy);
+    render();
+  });
   mkItem("🗄️ Ins Archiv verschieben", () => {
     (state.boardArchive = state.boardArchive || []).push({ board, archivedAt: Date.now() });
     state.boards = state.boards.filter(b => b !== board);
@@ -2653,8 +2779,12 @@ function openBoardMenu(board, anchor, nameEl) {
   mkItem("Board löschen", () => {
     const n = taskCount(board);
     if (confirm(`Board "${board.name}" mit ${n} Aufgabe(n) wirklich löschen?`)) {
+      const index = state.boards.indexOf(board);
       state.boards = state.boards.filter(b => b !== board);
       render();
+      offerUndo(`Board „${board.name}“ gelöscht`, () => {
+        state.boards.splice(Math.min(index, state.boards.length), 0, board);
+      });
     }
   }, true);
 
@@ -2839,6 +2969,12 @@ function renderCard(task) {
   meta.className = "card-meta";
   if (settings().showDue && task.due) {
     meta.appendChild(makeDueBadge(task));
+  }
+  if (task.repeat) {
+    const rp = document.createElement("span");
+    rp.textContent = "🔁";
+    rp.title = "Wiederholt sich " + (REPEAT_LABELS[task.repeat] || "");
+    meta.appendChild(rp);
   }
   if (task.pinned) {
     const p = document.createElement("span");
@@ -3113,11 +3249,20 @@ function openColumnMenu(board, col, anchor) {
     board.columns.splice(idx + 1, 0, col);
     render();
   });
+  if (col.tasks.length > 1) mkItem("📅 Nach Fälligkeit sortieren", () => {
+    const key = t => t.due || "9999-99-99";
+    col.tasks.sort((a, b) => key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+    render();
+  });
   mkItem("Spalte löschen", () => {
     const n = col.tasks.length;
     if (n === 0 || confirm(`Spalte "${col.name}" mit ${n} Aufgabe(n) wirklich löschen?`)) {
+      const index = board.columns.indexOf(col);
       board.columns = board.columns.filter(c => c !== col);
       render();
+      offerUndo(`Spalte „${col.name}“ gelöscht`, () => {
+        board.columns.splice(Math.min(index, board.columns.length), 0, col);
+      });
     }
   }, true);
 
@@ -3220,12 +3365,19 @@ function setColBadge(col) {
   mColBadge.style.background = col.color;
 }
 
-mColBadge.addEventListener("click", e => {
-  e.stopPropagation();
-  const found = modalTaskId ? findTask(modalTaskId) : null;
-  if (!found) return;
-  closeDropdown();
+function moveTaskTo(found, targetBoard, targetCol) {
+  const i = found.col.tasks.indexOf(found.task);
+  found.col.tasks.splice(i, 1);
+  targetCol.tasks.push(found.task);
+  touch(found.task);
+  save();
+  setColBadge(targetCol);
+  movedTaskId = found.task.id;
+}
 
+// Ebenen: 1 = Spalten des eigenen Boards, 2 = andere Boards, 3 = deren Spalten
+function openTaskMoveMenu(found, level, pickedBoard) {
+  closeDropdown();
   const dd = document.createElement("div");
   dd.className = "dropdown";
   dd.addEventListener("click", ev => ev.stopPropagation());
@@ -3233,32 +3385,76 @@ mColBadge.addEventListener("click", e => {
   const head = document.createElement("div");
   head.className = "opt-hint";
   head.style.padding = "8px 14px 6px";
-  head.textContent = "In diese Spalte verschieben:";
+  head.textContent = level === 2 ? "In welches Board?"
+    : level === 3 ? "In welche Spalte von „" + pickedBoard.name + "“?"
+    : "In diese Spalte verschieben:";
   dd.appendChild(head);
 
-  for (const col of found.board.columns) {
+  const mkRow = (color, label, fn) => {
     const it = document.createElement("div");
     it.className = "item";
-    const dot = document.createElement("span");
-    dot.className = "tag-dot";
-    dot.style.background = col.color;
-    it.append(dot, document.createTextNode(col.name + (col === found.col ? " ✓" : "")));
-    it.addEventListener("click", () => {
-      closeDropdown();
-      if (col === found.col) return;
-      const i = found.col.tasks.indexOf(found.task);
-      found.col.tasks.splice(i, 1);
-      col.tasks.push(found.task);
-      touch(found.task);
-      save();
-      setColBadge(col);
-      movedTaskId = found.task.id;
-    });
+    if (color) {
+      const dot = document.createElement("span");
+      dot.className = "tag-dot";
+      dot.style.background = color;
+      it.appendChild(dot);
+    }
+    it.appendChild(document.createTextNode(label));
+    it.addEventListener("click", fn);
     dd.appendChild(it);
+  };
+
+  if (level === 1) {
+    for (const col of found.board.columns) {
+      mkRow(col.color, col.name + (col === found.col ? " ✓" : ""), () => {
+        closeDropdown();
+        if (col !== found.col) moveTaskTo(found, found.board, col);
+      });
+    }
+    const others = state.boards.filter(b => b !== found.board);
+    if (others.length) {
+      const sep = document.createElement("div");
+      sep.className = "sep";
+      dd.appendChild(sep);
+      mkRow(null, "📤 In ein anderes Board…", () => openTaskMoveMenu(found, 2));
+    }
+  } else if (level === 2) {
+    for (const b of state.boards.filter(b => b !== found.board)) {
+      mkRow(b.color, b.name, () => openTaskMoveMenu(found, 3, b));
+    }
+    const sep = document.createElement("div");
+    sep.className = "sep";
+    dd.appendChild(sep);
+    mkRow(null, "← Zurück", () => openTaskMoveMenu(found, 1));
+  } else {
+    for (const col of pickedBoard.columns) {
+      mkRow(col.color, col.name, () => {
+        closeDropdown();
+        moveTaskTo(found, pickedBoard, col);
+        mColBadge.title = "Liegt jetzt in Board „" + pickedBoard.name + "“";
+      });
+    }
+    if (!pickedBoard.columns.length) {
+      const empty = document.createElement("div");
+      empty.className = "opt-hint";
+      empty.textContent = "Dieses Board hat noch keine Spalten.";
+      dd.appendChild(empty);
+    }
+    const sep = document.createElement("div");
+    sep.className = "sep";
+    dd.appendChild(sep);
+    mkRow(null, "← Zurück", () => openTaskMoveMenu(found, 2));
   }
 
   document.body.appendChild(dd);
   placeDropdown(dd, mColBadge);
+}
+
+mColBadge.addEventListener("click", e => {
+  e.stopPropagation();
+  const found = modalTaskId ? findTask(modalTaskId) : null;
+  if (!found) return;
+  openTaskMoveMenu(found, 1);
 });
 
 /* ---------- Checkliste ---------- */
@@ -3435,10 +3631,41 @@ const mDueWrap = document.getElementById("m-due-wrap");
 const mDue = document.getElementById("m-due");
 const mDueClear = document.getElementById("m-due-clear");
 
+const mRepeatWrap = document.getElementById("m-repeat-wrap");
+const mRepeat = document.getElementById("m-repeat");
+
 function renderDue(task) {
   mDueWrap.hidden = !settings().showDue;
+  mRepeatWrap.hidden = !settings().showDue;
   mDue.value = task.due || "";
   mDueClear.hidden = !task.due;
+  mRepeat.value = task.repeat || "";
+}
+
+mRepeat.addEventListener("change", () => {
+  const task = currentTask();
+  if (!task) return;
+  task.repeat = mRepeat.value || null;
+  if (task.repeat && !task.due) {
+    alert("Damit die Wiederholung greift, braucht die Aufgabe ein Fälligkeitsdatum – bitte links noch eines setzen.");
+  }
+  touch(task);
+  save();
+});
+
+const REPEAT_LABELS = { day: "täglich", week: "wöchentlich", month: "monatlich" };
+
+// Nächster Termin nach dem Abschließen – immer in der Zukunft
+function nextDueDate(due, unit) {
+  const [y, m, d] = due.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const t = todayStr();
+  do {
+    if (unit === "day") dt.setDate(dt.getDate() + 1);
+    else if (unit === "week") dt.setDate(dt.getDate() + 7);
+    else dt.setMonth(dt.getMonth() + 1);
+  } while (dateStr(dt) <= t);
+  return dateStr(dt);
 }
 
 mDue.addEventListener("change", () => {
@@ -3644,6 +3871,23 @@ function archiveTask(board, col, task) {
 document.getElementById("m-complete").addEventListener("click", () => {
   const f = modalTaskId ? findTask(modalTaskId) : null;
   if (!f) return;
+  // Wiederkehrende Aufgabe: mit dem nächsten Termin neu anlegen
+  const t = f.task;
+  if (t.repeat && t.due) {
+    f.col.tasks.push({
+      id: uid(),
+      title: t.title,
+      description: t.description || "",
+      comments: [],
+      pinned: false,
+      createdAt: Date.now(),
+      due: nextDueDate(t.due, t.repeat),
+      repeat: t.repeat,
+      tagIds: (t.tagIds || []).slice(),
+      links: (t.links || []).map(l => ({ id: uid(), url: l.url })),
+      checklist: (t.checklist || []).map(c => ({ id: uid(), text: c.text, done: false }))
+    });
+  }
   archiveTask(f.board, f.col, f.task);
   save();
   closeModal();
@@ -4073,6 +4317,8 @@ backdrop.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  const searchBd = document.getElementById("search-backdrop");
+  if (searchBd.classList.contains("open")) { searchBd.classList.remove("open"); return; }
   const pwBd = document.getElementById("pw-backdrop");
   if (!pwBd.hidden) { pwBd.hidden = true; return; }
   const newsBd = document.getElementById("news-backdrop");
@@ -4080,13 +4326,39 @@ document.addEventListener("keydown", e => {
   if (archiveBackdrop.classList.contains("open")) { archiveBackdrop.classList.remove("open"); return; }
   if (backdrop.classList.contains("open")) closeModal();
 });
+document.getElementById("m-duplicate").addEventListener("click", () => {
+  const f = modalTaskId ? findTask(modalTaskId) : null;
+  if (!f) return;
+  const t = f.task;
+  const copy = {
+    id: uid(),
+    title: t.title + " (Kopie)",
+    description: t.description || "",
+    comments: [],
+    pinned: false,
+    createdAt: Date.now(),
+    due: t.due || null,
+    repeat: t.repeat || null,
+    tagIds: (t.tagIds || []).slice(),
+    links: (t.links || []).map(l => ({ id: uid(), url: l.url })),
+    checklist: (t.checklist || []).map(c => ({ id: uid(), text: c.text, done: c.done }))
+  };
+  f.col.tasks.splice(f.col.tasks.indexOf(t) + 1, 0, copy);
+  save();
+  movedTaskId = copy.id;
+  closeModal();
+});
+
 document.getElementById("m-delete").addEventListener("click", () => {
   const f = modalTaskId ? findTask(modalTaskId) : null;
   if (!f) return;
-  if (confirm(`Aufgabe "${f.task.title}" wirklich löschen?`)) {
-    f.col.tasks = f.col.tasks.filter(t => t !== f.task);
-    closeModal();
-  }
+  const { col, task } = f;
+  const index = col.tasks.indexOf(task);
+  col.tasks = col.tasks.filter(t => t !== task);
+  closeModal();
+  offerUndo(`Aufgabe „${task.title}“ gelöscht`, () => {
+    col.tasks.splice(Math.min(index, col.tasks.length), 0, task);
+  });
 });
 
 function autosize(ta) {
@@ -4099,6 +4371,133 @@ function formatDate(ts) {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit"
   }) + " Uhr";
+}
+
+/* ================= Suche über alle Boards ================= */
+
+const searchBackdrop = document.getElementById("search-backdrop");
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+
+function openSearch() {
+  searchInput.value = "";
+  renderSearchResults();
+  searchBackdrop.classList.add("open");
+  searchInput.focus();
+}
+
+function taskHaystack(t) {
+  return [
+    t.title, t.description || "",
+    ...(t.comments || []).map(c => c.text),
+    ...(t.checklist || []).map(c => c.text),
+    ...(t.links || []).map(l => l.url)
+  ].join(" ").toLowerCase();
+}
+
+function renderSearchResults() {
+  const q = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  if (q.length < 2) {
+    const hint = document.createElement("div");
+    hint.className = "search-empty";
+    hint.textContent = "Mindestens 2 Zeichen eingeben – durchsucht Titel, Beschreibungen, Checklisten, Kommentare, Verknüpfungen, Notizen und das Archiv.";
+    searchResults.appendChild(hint);
+    return;
+  }
+
+  const results = [];
+  for (const b of state.boards) {
+    for (const col of b.columns) {
+      for (const t of col.tasks) {
+        if (taskHaystack(t).includes(q)) results.push({ title: t.title, meta: `${b.name} › ${col.name}`, go: () => { openBoard(b.id); openModal(t.id); } });
+      }
+    }
+    for (const a of (b.archive || [])) {
+      if (taskHaystack(a.task).includes(q)) results.push({ title: a.task.title, meta: `🗄️ Archiv · ${b.name}`, go: () => { openBoard(b.id); openArchive(b); } });
+    }
+  }
+  for (const ba of (state.boardArchive || [])) {
+    for (const col of ba.board.columns) {
+      for (const t of col.tasks) {
+        if (taskHaystack(t).includes(q)) results.push({ title: t.title, meta: `🗄️ Archiviertes Board · ${ba.board.name}`, go: () => { goHome(); openBoardArchive(); } });
+      }
+    }
+  }
+  for (const n of (state.notes || [])) {
+    if ((n.text || "").toLowerCase().includes(q)) {
+      const first = (n.text || "").split("\n")[0].slice(0, 60);
+      results.push({ title: first || "Notiz", meta: "🗒️ Notiz auf der Startseite", go: () => goHome() });
+    }
+  }
+
+  if (!results.length) {
+    const empty = document.createElement("div");
+    empty.className = "search-empty";
+    empty.textContent = "Keine Treffer für „" + searchInput.value.trim() + "“.";
+    searchResults.appendChild(empty);
+    return;
+  }
+  for (const r of results.slice(0, 50)) {
+    const row = document.createElement("div");
+    row.className = "search-item";
+    const t = document.createElement("div");
+    t.className = "s-title";
+    t.textContent = r.title;
+    const m = document.createElement("div");
+    m.className = "s-meta";
+    m.textContent = r.meta;
+    row.append(t, m);
+    row.addEventListener("click", () => {
+      searchBackdrop.classList.remove("open");
+      r.go();
+    });
+    searchResults.appendChild(row);
+  }
+  if (results.length > 50) {
+    const more = document.createElement("div");
+    more.className = "search-empty";
+    more.textContent = `… und ${results.length - 50} weitere Treffer – Suchbegriff verfeinern.`;
+    searchResults.appendChild(more);
+  }
+}
+
+searchInput.addEventListener("input", renderSearchResults);
+document.getElementById("btn-search").addEventListener("click", openSearch);
+document.getElementById("search-close").addEventListener("click", () => searchBackdrop.classList.remove("open"));
+searchBackdrop.addEventListener("click", e => {
+  if (e.target === searchBackdrop) searchBackdrop.classList.remove("open");
+});
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    openSearch();
+  }
+});
+
+/* ================= Rückgängig (nach dem Löschen) ================= */
+
+let undoTimer = null;
+
+function offerUndo(text, restoreFn) {
+  document.getElementById("undo-banner")?.remove();
+  clearTimeout(undoTimer);
+  const bar = document.createElement("div");
+  bar.id = "undo-banner";
+  const s = document.createElement("span");
+  s.textContent = text;
+  const b = document.createElement("button");
+  b.textContent = "Rückgängig";
+  b.addEventListener("click", () => {
+    clearTimeout(undoTimer);
+    bar.remove();
+    restoreFn();
+    save();
+    render();
+  });
+  bar.append(s, b);
+  document.body.appendChild(bar);
+  undoTimer = setTimeout(() => bar.remove(), 7000);
 }
 
 /* ================= Automatische Sicherung ================= */
@@ -4286,6 +4685,14 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 18, date: "02.09.2026", title: "Suche, Rückgängig, Wiederholungen & mehr", items: [
+    "🔍 Suche über alles: die Lupe oben (oder Strg+K) durchsucht Titel, Beschreibungen, Checklisten, Kommentare, Verknüpfungen, Notizen und beide Archive – Klick springt direkt hin.",
+    "↩️ Rückgängig statt Schreck: Nach dem Löschen von Aufgaben, Notizen, Spalten oder Boards erscheint unten kurz ein Rückgängig-Knopf.",
+    "🔁 Wiederkehrende Aufgaben: in der Aufgabe „Wiederholen“ wählen (täglich/wöchentlich/monatlich) – beim Abschließen legt sie sich mit dem nächsten Termin neu an, Checkliste frisch abgehakt.",
+    "📋 Duplizieren: Aufgaben (Knopf unten im Aufgabenfenster) und ganze Boards (⋮-Menü) als Kopie anlegen – praktisch für Vorlagen.",
+    "📤 Aufgaben in ein anderes Board verschieben: über die Spalten-Marke im Aufgabenfenster → „In ein anderes Board…“.",
+    "📅 Spalte nach Fälligkeit sortieren: ein Klick im ⋮-Menü der Spalte ordnet die Karten nach Termin."
+  ]},
   { version: 17, date: "17.08.2026", title: "Boards archivieren", items: [
     "🗄️ Ganze Boards lassen sich jetzt ins Archiv verschieben (⋮-Menü der Kachel) – gut für abgeschlossene Projekte, die nicht mehr auf der Startseite stören sollen.",
     "Die graue Archiv-Kachel erscheint, sobald etwas archiviert ist: dort wiederherstellen oder endgültig löschen. Alle Aufgaben bleiben dabei erhalten."
