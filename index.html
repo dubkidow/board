@@ -250,6 +250,11 @@
   .board-tile .tile-menu-btn:hover { background: var(--hover); color: var(--text); }
   .board-tile.dragging { opacity: .4; }
   .board-tile.drag-over-tile { outline: 2px dashed var(--accent); outline-offset: 4px; }
+  .board-tile.archive-tile {
+    border-color: rgba(120,144,156,.45);
+    color: var(--text-light);
+  }
+  .board-tile.archive-tile:hover { background: rgba(120,144,156,.08); }
 
   .board-tile.add-tile {
     border: 2px dashed rgba(47,125,225,.5);
@@ -1212,7 +1217,7 @@
     cursor: pointer;
   }
   #m-tag-add:hover { background: var(--hover); color: var(--text); }
-  .dropdown .tag-dot {
+  .tag-dot {
     display: inline-block;
     width: 10px; height: 10px;
     border-radius: 50%;
@@ -1581,7 +1586,7 @@
 <div id="archive-backdrop">
   <div id="archive-modal">
     <div class="n-head">
-      <h2>🗄️ Archiv</h2>
+      <h2 id="archive-title">🗄️ Archiv</h2>
       <button class="m-close" id="archive-close" title="Schließen">&times;</button>
     </div>
     <div class="n-body" id="archive-body"></div>
@@ -2089,6 +2094,15 @@ function renderHome() {
     boardGrid.appendChild(renderBoardTile(board));
   }
   boardGrid.appendChild(renderAddTile());
+  const nArch = (state.boardArchive || []).length;
+  if (nArch) {
+    const t = document.createElement("div");
+    t.className = "board-tile add-tile archive-tile";
+    t.textContent = `🗄️ Archiv (${nArch})`;
+    t.title = "Archivierte Boards ansehen";
+    t.addEventListener("click", openBoardArchive);
+    boardGrid.appendChild(t);
+  }
 
   // --- Angepinnte Aufgaben ---
   pinnedList.innerHTML = "";
@@ -2630,6 +2644,11 @@ function openBoardMenu(board, anchor, nameEl) {
     nameEl.contentEditable = "true";
     nameEl.focus();
     document.execCommand("selectAll", false, null);
+  });
+  mkItem("🗄️ Ins Archiv verschieben", () => {
+    (state.boardArchive = state.boardArchive || []).push({ board, archivedAt: Date.now() });
+    state.boards = state.boards.filter(b => b !== board);
+    render();
   });
   mkItem("Board löschen", () => {
     const n = taskCount(board);
@@ -3630,7 +3649,64 @@ document.getElementById("m-complete").addEventListener("click", () => {
   closeModal();
 });
 
+function openBoardArchive() {
+  document.getElementById("archive-title").textContent = "🗄️ Archivierte Boards";
+  archiveBody.innerHTML = "";
+  const entries = [...(state.boardArchive || [])].sort((a, b) => b.archivedAt - a.archivedAt);
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "arch-empty";
+    empty.textContent = "Keine archivierten Boards.";
+    archiveBody.appendChild(empty);
+  }
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "arch-item";
+
+    const info = document.createElement("div");
+    info.className = "a-info";
+    const t = document.createElement("div");
+    t.className = "a-title";
+    const dot = document.createElement("span");
+    dot.className = "tag-dot";
+    dot.style.background = entry.board.color;
+    t.append(dot, document.createTextNode(entry.board.name));
+    const m = document.createElement("div");
+    m.className = "a-meta";
+    const n = taskCount(entry.board);
+    m.textContent = `${n} Aufgabe${n === 1 ? "" : "n"} · archiviert am ${formatDate(entry.archivedAt)}`;
+    info.append(t, m);
+
+    const restore = document.createElement("button");
+    restore.textContent = "Wiederherstellen";
+    restore.addEventListener("click", () => {
+      state.boardArchive = state.boardArchive.filter(x => x !== entry);
+      state.boards.push(entry.board);
+      save();
+      render();
+      openBoardArchive();
+    });
+
+    const del = document.createElement("button");
+    del.className = "a-del";
+    del.textContent = "Löschen";
+    del.title = "Endgültig löschen";
+    del.addEventListener("click", () => {
+      if (!confirm(`Board "${entry.board.name}" mit ${taskCount(entry.board)} Aufgabe(n) endgültig löschen?`)) return;
+      state.boardArchive = state.boardArchive.filter(x => x !== entry);
+      save();
+      render();
+      openBoardArchive();
+    });
+
+    row.append(info, restore, del);
+    archiveBody.appendChild(row);
+  }
+  archiveBackdrop.classList.add("open");
+}
+
 function openArchive(board) {
+  document.getElementById("archive-title").textContent = "🗄️ Archiv · " + board.name;
   archiveBody.innerHTML = "";
   const entries = [...(board.archive || [])].sort((a, b) => b.archivedAt - a.archivedAt);
   if (!entries.length) {
@@ -4210,6 +4286,10 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 17, date: "17.08.2026", title: "Boards archivieren", items: [
+    "🗄️ Ganze Boards lassen sich jetzt ins Archiv verschieben (⋮-Menü der Kachel) – gut für abgeschlossene Projekte, die nicht mehr auf der Startseite stören sollen.",
+    "Die graue Archiv-Kachel erscheint, sobald etwas archiviert ist: dort wiederherstellen oder endgültig löschen. Alle Aufgaben bleiben dabei erhalten."
+  ]},
   { version: 16, date: "17.08.2026", title: "Notizen auf der Startseite", items: [
     "🗒️ Sticky Notes: bunte Haftnotizen auf der Startseite – über „+ Notiz“ anlegen, direkt drauflos schreiben, Farbe über die Punkte unten wechseln.",
     "Notizen synchronisieren mit deinem Konto und lassen sich im ⚙️-Menü ausblenden oder rechts neben die Boards legen."
