@@ -464,7 +464,21 @@
     border-radius: 4px;
     padding-right: 22px;
   }
-  .card .card-title[contenteditable="true"] { background: var(--hover); padding: 2px 22px 2px 4px; }
+  .card .card-title-edit {
+    width: 100%;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    resize: none;
+    overflow: hidden;
+  }
   .card .card-edit-btn {
     position: absolute;
     top: 7px; right: 6px;
@@ -2913,40 +2927,46 @@ function renderCard(task) {
   t.spellcheck = false;
   card.appendChild(t);
 
-  // Umbenennen direkt auf der Karte (über den Stift beim Hovern)
+  // Umbenennen direkt auf der Karte (über den Stift beim Hovern):
+  // echtes Eingabefeld statt contentEditable – das ist in Chrome zuverlässig,
+  // wo der Fokus auf editierbarem Text in ziehbaren Karten oft nicht ankommt.
   const editBtn = document.createElement("button");
   editBtn.className = "card-edit-btn";
   editBtn.textContent = "✏️";
   editBtn.title = "Umbenennen";
+  // mousedown abfangen: kein Fokus-Wechsel auf den Knopf, kein Drag-Start
+  editBtn.addEventListener("mousedown", e => { e.preventDefault(); e.stopPropagation(); });
   editBtn.addEventListener("click", e => {
     e.stopPropagation();
+    if (card.querySelector(".card-title-edit")) return;
     card.draggable = false;
-    t.contentEditable = "true";
-    t.focus();
-    const range = document.createRange();
-    range.selectNodeContents(t);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const input = document.createElement("textarea");
+    input.className = "card-title-edit";
+    input.rows = 1;
+    input.value = task.title;
+    input.spellcheck = false;
+    card.replaceChild(input, t);
+    autosize(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const commit = keep => {
+      if (done) return;
+      done = true;
+      const v = input.value.trim();
+      if (keep && v && v !== task.title) { task.title = v; touch(task); }
+      render();
+    };
+    input.addEventListener("blur", () => commit(true));
+    input.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") { ev.preventDefault(); commit(true); }
+      if (ev.key === "Escape") { commit(false); }
+    });
+    input.addEventListener("input", () => autosize(input));
+    input.addEventListener("click", ev => ev.stopPropagation());
+    input.addEventListener("mousedown", ev => ev.stopPropagation());
   });
   card.appendChild(editBtn);
-
-  t.addEventListener("blur", () => {
-    if (!t.isContentEditable) return;
-    t.contentEditable = "false";
-    card.draggable = true;
-    const v = t.textContent.trim();
-    if (v && v !== task.title) { task.title = v; touch(task); save(); }
-    t.textContent = task.title;
-  });
-  t.addEventListener("keydown", e => {
-    if (!t.isContentEditable) return;
-    if (e.key === "Enter") { e.preventDefault(); t.blur(); }
-    if (e.key === "Escape") { t.textContent = task.title; t.blur(); }
-  });
-  t.addEventListener("click", e => {
-    if (t.isContentEditable) e.stopPropagation();
-  });
 
   // Tags als farbige Chips
   if (settings().showTags && task.tagIds && task.tagIds.length) {
