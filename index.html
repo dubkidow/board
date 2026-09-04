@@ -377,6 +377,19 @@
     user-select: none;
   }
   .col-header:active { cursor: grabbing; }
+  .col-header .col-title-edit {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2d3d;
+    background: rgba(255,255,255,.92);
+    outline: none;
+  }
   .col-title {
     font-weight: 600;
     font-size: 14px;
@@ -2512,9 +2525,10 @@ function renderBoardTile(board) {
     if (name.isContentEditable) e.stopPropagation();
   });
 
-  // Boards per Drag & Drop sortieren
+  // Boards per Drag & Drop sortieren – Ziehen nur unterbinden,
+  // während der Name tatsächlich bearbeitet wird
   tile.draggable = true;
-  name.addEventListener("mousedown", () => tile.draggable = false);
+  name.addEventListener("mousedown", () => { if (name.isContentEditable) tile.draggable = false; });
   name.addEventListener("blur", () => tile.draggable = true);
   tile.addEventListener("dragstart", e => {
     e.dataTransfer.setData("text/board", board.id);
@@ -2842,21 +2856,15 @@ function renderColumn(board, col) {
 
   const title = document.createElement("div");
   title.className = "col-title";
-  title.contentEditable = "true";
   title.spellcheck = false;
   title.textContent = col.name;
-  title.addEventListener("blur", () => {
-    const v = title.textContent.trim();
-    if (v && v !== col.name) { col.name = v; save(); }
-    else title.textContent = col.name;
-    head.draggable = true;
+  title.title = "Zum Umbenennen doppelklicken, zum Verschieben ziehen";
+  // Umbenennen per Doppelklick (oder über das ⋮-Menü) – Einfachklick/Ziehen
+  // bleibt frei fürs Verschieben der ganzen Spalte
+  title.addEventListener("dblclick", e => {
+    e.stopPropagation();
+    startColRename(board, col);
   });
-  title.addEventListener("keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); title.blur(); }
-    if (e.key === "Escape") { title.textContent = col.name; title.blur(); }
-  });
-  // Verhindern, dass Editieren einen Drag startet
-  title.addEventListener("mousedown", () => head.draggable = false);
 
   const count = document.createElement("span");
   count.className = "col-count";
@@ -3141,6 +3149,36 @@ function clearColHighlights() {
     .forEach(c => c.classList.remove("drag-over-col"));
 }
 
+// Spalte umbenennen: Eingabefeld im Spaltenkopf (zuverlässig in allen Browsern)
+function startColRename(board, col) {
+  const head = boardEl.querySelector(`[data-col-id="${col.id}"] .col-header`);
+  if (!head || head.querySelector(".col-title-edit")) return;
+  const title = head.querySelector(".col-title");
+  head.draggable = false;
+  const input = document.createElement("input");
+  input.className = "col-title-edit";
+  input.value = col.name;
+  input.spellcheck = false;
+  head.replaceChild(input, title);
+  input.focus();
+  input.select();
+  let done = false;
+  const commit = keep => {
+    if (done) return;
+    done = true;
+    const v = input.value.trim();
+    if (keep && v && v !== col.name) col.name = v;
+    render();
+  };
+  input.addEventListener("blur", () => commit(true));
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") { ev.preventDefault(); commit(true); }
+    if (ev.key === "Escape") commit(false);
+  });
+  input.addEventListener("mousedown", ev => ev.stopPropagation());
+  input.addEventListener("click", ev => ev.stopPropagation());
+}
+
 function onColumnDragOver(e, colEl, body, col) {
   if (dragType === "task") {
     e.preventDefault();
@@ -3257,6 +3295,8 @@ function openColumnMenu(board, col, anchor) {
     it.addEventListener("click", () => { fn(); closeDropdown(); });
     dd.appendChild(it);
   };
+
+  mkItem("✏️ Umbenennen", () => startColRename(board, col));
 
   const idx = board.columns.indexOf(col);
   if (idx > 0) mkItem("← Nach links verschieben", () => {
@@ -4705,6 +4745,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 19, date: "04.09.2026", title: "Flüssigeres Verschieben", items: [
+    "🖐️ Spalten lassen sich jetzt am kompletten farbigen Kopf packen und verschieben – vorher klappte das nur am schmalen Rand, weil jeder Klick auf den Titel die Umbenennung startete.",
+    "✏️ Spalte umbenennen geht jetzt per Doppelklick auf den Titel oder über das ⋮-Menü; auch der Stift auf den Karten funktioniert in Chrome jetzt mit einem Klick.",
+    "Board-Kacheln auf der Startseite lassen sich ebenfalls am Namen anfassen und ziehen."
+  ]},
   { version: 18, date: "02.09.2026", title: "Suche, Rückgängig, Wiederholungen & mehr", items: [
     "🔍 Suche über alles: die Lupe oben (oder Strg+K) durchsucht Titel, Beschreibungen, Checklisten, Kommentare, Verknüpfungen, Notizen und beide Archive – Klick springt direkt hin.",
     "↩️ Rückgängig statt Schreck: Nach dem Löschen von Aufgaben, Notizen, Spalten oder Boards erscheint unten kurz ein Rückgängig-Knopf.",
