@@ -685,13 +685,13 @@
     border-color: #f0c869;
     color: #a4761b;
   }
-  #modal .m-close {
+  #modal .m-close, .n-head .m-close {
     background: none; border: none;
     font-size: 22px; color: var(--text-light);
     cursor: pointer; line-height: 1;
     padding: 2px 6px; border-radius: 6px;
   }
-  #modal .m-close:hover { background: var(--hover); }
+  #modal .m-close:hover, .n-head .m-close:hover { background: var(--hover); }
   #modal .m-body {
     padding: 14px 22px;
     overflow-y: auto;
@@ -962,7 +962,7 @@
     background: #ef5350;
     box-shadow: 0 0 0 2px var(--card-bg);
   }
-  #news-backdrop, #archive-backdrop, #search-backdrop {
+  #news-backdrop, #archive-backdrop, #search-backdrop, #daynote-backdrop {
     position: fixed; inset: 0;
     background: rgba(25,35,50,.35);
     backdrop-filter: blur(6px);
@@ -973,8 +973,8 @@
     padding: 8vh 16px;
     z-index: 250;
   }
-  #news-backdrop.open, #archive-backdrop.open, #search-backdrop.open { display: flex; }
-  #news-modal, #archive-modal, #search-modal {
+  #news-backdrop.open, #archive-backdrop.open, #search-backdrop.open, #daynote-backdrop.open { display: flex; }
+  #news-modal, #archive-modal, #search-modal, #daynote-modal {
     background: var(--modal-bg);
     border-radius: 18px;
     border: 1px solid var(--edge);
@@ -1019,15 +1019,15 @@
   }
   .search-item .s-meta { font-size: 11.5px; color: var(--text-light); }
   .search-empty { color: var(--text-light); font-size: 13.5px; margin-top: 14px; }
-  #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head {
+  #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head, #daynote-modal .n-head {
     padding: 16px 22px;
     border-bottom: 1px solid var(--border-soft);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  #news-modal .n-head h2, #archive-modal .n-head h2 { font-size: 17px; }
-  #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body {
+  #news-modal .n-head h2, #archive-modal .n-head h2, #daynote-modal .n-head h2 { font-size: 17px; }
+  #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body, #daynote-modal .n-body {
     padding: 4px 22px 20px;
     overflow-y: auto;
     min-height: 120px;
@@ -1189,6 +1189,76 @@
   .cal-chip.cal-over { outline: 2px solid var(--due-over, #e5484d); outline-offset: -2px; }
   .cal-chip.cal-soon { outline: 2px solid var(--due-soon, #fdd835); outline-offset: -2px; }
   .cal-more { font-size: 10.5px; color: var(--text-light); }
+  .cal-day { cursor: pointer; transition: background .12s; }
+  .cal-day:hover { background: var(--hover); }
+  .cal-note {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 10.5px;
+    line-height: 1.3;
+    color: #5d4a00;
+    background: #fff59d;
+    border-radius: 5px;
+    padding: 2px 5px;
+    margin-bottom: 3px;
+    white-space: pre-line;
+    word-break: break-word;
+  }
+
+  /* ---------- Tagesnotizen (Dialog) ---------- */
+  #daynote-modal { width: 540px; }
+  #daynote-modal .n-head { gap: 8px; }
+  #daynote-modal .n-head h2 { flex: 1; min-width: 0; }
+  #daynote-modal .dn-sub { font-size: 12px; font-weight: 500; color: var(--text-light); margin-top: 2px; }
+  .dn-nav { display: flex; gap: 4px; }
+  .dn-nav button, .dn-actions button {
+    background: var(--card-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 4px 11px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .dn-nav button:hover, .dn-actions button:hover { background: var(--hover); }
+  #dn-text {
+    width: 100%;
+    min-height: 190px;
+    margin-top: 14px;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  #dn-text:focus { outline: none; border-color: var(--accent); }
+  .dn-hint { font-size: 12px; color: var(--text-light); margin-top: 6px; }
+  .dn-due { margin-top: 14px; }
+  .dn-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-light); margin-bottom: 6px; }
+  .dn-due .cal-chip { display: inline-block; max-width: 100%; margin-right: 4px; font-size: 12px; padding: 3px 8px; }
+  .dn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .dn-row {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 10px;
+    padding: 9px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .dn-row:hover { background: var(--hover); }
+  .dn-row .dn-date { font-size: 12.5px; font-weight: 600; color: var(--text-light); }
+  .dn-row .dn-txt { font-size: 13.5px; white-space: pre-line; word-break: break-word; }
+  .dn-kw { font-size: 11.5px; font-weight: 700; color: var(--accent); margin: 16px 0 2px; text-transform: uppercase; letter-spacing: .04em; }
+  .dn-empty { color: var(--text-light); font-size: 13.5px; margin-top: 14px; }
 
   /* ---------- Archiv ---------- */
   .arch-item {
@@ -1545,6 +1615,8 @@
     .cal-chip { font-size: 0; height: 5px; padding: 0; margin-bottom: 2px; border-radius: 3px; }
     .cal-chip.cal-over { outline-width: 1px; }
     .cal-more { font-size: 9px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-note { font-size: 0; height: 5px; padding: 0; margin-bottom: 2px; border-radius: 3px; background: #f9d71c; }
+    .dn-row { grid-template-columns: 80px 1fr; }
 
     /* Board: eine Spalte füllt den Bildschirm, die nächste blitzt hervor */
     #board { padding: 10px; gap: 10px; scroll-snap-type: x proximity; }
@@ -1575,10 +1647,10 @@
     .check-add button { padding: 9px 14px; }
 
     /* Weitere Fenster */
-    #news-backdrop, #archive-backdrop, #search-backdrop { padding: 5vh 10px; }
+    #news-backdrop, #archive-backdrop, #search-backdrop, #daynote-backdrop { padding: 5vh 10px; }
     #news-modal, #archive-modal, #search-modal { max-height: 86dvh; }
-    #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head { padding: 14px 16px; }
-    #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body { padding: 4px 16px 18px; }
+    #news-modal .n-head, #archive-modal .n-head, #search-modal .n-head, #daynote-modal .n-head { padding: 14px 16px; }
+    #news-modal .n-body, #archive-modal .n-body, #search-modal .n-body, #daynote-modal .n-body { padding: 4px 16px 18px; }
     .arch-item { flex-wrap: wrap; }
     .arch-item .a-info { flex: 1 1 100%; }
     .login-box { padding: 26px 22px; width: 100%; }
@@ -1643,6 +1715,7 @@
           <button id="cal-prev" title="Voriger Monat">‹</button>
           <button id="cal-today">Heute</button>
           <button id="cal-next" title="Nächster Monat">›</button>
+          <button id="cal-notes" title="Alle Tagesnotizen dieses Monats als Liste">📝 Notizen</button>
         </div>
       </div>
       <div id="cal-grid"></div>
@@ -1714,6 +1787,20 @@
       <button class="m-close" id="archive-close" title="Schließen">&times;</button>
     </div>
     <div class="n-body" id="archive-body"></div>
+  </div>
+</div>
+
+<div id="daynote-backdrop">
+  <div id="daynote-modal">
+    <div class="n-head">
+      <h2 id="dn-title"></h2>
+      <div class="dn-nav">
+        <button id="dn-prev"></button>
+        <button id="dn-next"></button>
+      </div>
+      <button class="m-close" id="dn-close" title="Schließen">&times;</button>
+    </div>
+    <div class="n-body" id="dn-body"></div>
   </div>
 </div>
 
@@ -2376,7 +2463,7 @@ function collectDueTasks() {
 function renderCalendar() {
   const sec = document.getElementById("cal-section");
   const s = settings();
-  if (!s.showDue || !s.showCalendar) { sec.hidden = true; return; }
+  if (!s.showCalendar) { sec.hidden = true; return; }
   sec.hidden = false;
 
   const now = new Date();
@@ -2396,7 +2483,8 @@ function renderCalendar() {
   const first = new Date(calYear, calMonth, 1);
   const startOffset = (first.getDay() + 6) % 7;      // Montag = 0
   const start = new Date(calYear, calMonth, 1 - startOffset);
-  const dueMap = collectDueTasks();
+  const dueMap = s.showDue ? collectDueTasks() : {};
+  const dayNotes = state.dayNotes || {};
   const todayS = todayStr();
 
   for (let w = 0; w < 6; w++) {
@@ -2424,6 +2512,16 @@ function renderCalendar() {
       num.className = "cd-num";
       num.textContent = d.getDate();
       cell.appendChild(num);
+      cell.title = "Klicken für Tagesnotiz";
+      cell.addEventListener("click", () => openDayNote(ds));
+
+      if (dayNotes[ds]) {
+        const note = document.createElement("div");
+        note.className = "cal-note";
+        note.textContent = dayNotes[ds];
+        cell.title = dayNotes[ds];
+        cell.appendChild(note);
+      }
 
       const entries = dueMap[ds] || [];
       const MAX = 3;
@@ -2438,7 +2536,8 @@ function renderCalendar() {
         chip.textContent = entry.task.title;
         chip.title = entry.task.title + "  (" + entry.board.name +
           (status === " cal-over" ? ", überfällig" : status === " cal-soon" ? ", bald fällig" : "") + ")";
-        chip.addEventListener("click", () => {
+        chip.addEventListener("click", e => {
+          e.stopPropagation();
           openBoard(entry.board.id);
           openModal(entry.task.id);
         });
@@ -2469,6 +2568,221 @@ document.getElementById("cal-next").addEventListener("click", () => {
 document.getElementById("cal-today").addEventListener("click", () => {
   calYear = null; calMonth = null;
   renderCalendar();
+});
+document.getElementById("cal-notes").addEventListener("click", () => {
+  const now = new Date();
+  openDayNoteList(calYear ?? now.getFullYear(), calMonth ?? now.getMonth());
+});
+
+/* ---------- Tagesnotizen (z. B. für Projektzeiten) ---------- */
+// Gespeichert als state.dayNotes = { "JJJJ-MM-TT": "Text" } – leere Tage fallen raus
+
+const dnBackdrop = document.getElementById("daynote-backdrop");
+const dnBody = document.getElementById("dn-body");
+const dnTitle = document.getElementById("dn-title");
+const dnPrev = document.getElementById("dn-prev");
+const dnNext = document.getElementById("dn-next");
+let dnView = null;   // { mode: "day", ds } oder { mode: "list", year, month }
+
+function parseDateStr(ds) {
+  const [y, m, d] = ds.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function shiftDateStr(ds, days) {
+  const d = parseDateStr(ds);
+  d.setDate(d.getDate() + days);
+  return dateStr(d);
+}
+
+// "Mo 01.09." bzw. "Mo 01.09.2026"
+function shortDayLabel(d, withYear) {
+  return d.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "") + " " +
+    String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") + "." +
+    (withYear ? d.getFullYear() : "");
+}
+
+function setDayNote(ds, text) {
+  state.dayNotes = state.dayNotes || {};
+  if (text.trim()) state.dayNotes[ds] = text;
+  else delete state.dayNotes[ds];
+  save();
+}
+
+function openDayNote(ds) {
+  dnView = { mode: "day", ds };
+  const d = parseDateStr(ds);
+  dnTitle.textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const sub = document.createElement("div");
+  sub.className = "dn-sub";
+  sub.textContent = "KW " + isoWeek(d) + (ds === todayStr() ? " · heute" : "");
+  dnTitle.appendChild(sub);
+  dnPrev.textContent = "‹"; dnPrev.title = "Voriger Tag (Alt+←)";
+  dnNext.textContent = "›"; dnNext.title = "Nächster Tag (Alt+→)";
+
+  dnBody.innerHTML = "";
+  const ta = document.createElement("textarea");
+  ta.id = "dn-text";
+  ta.placeholder = "Was lief an diesem Tag? z. B.\nProjekt A – 3,5 h\nProjekt B – 2 h\nBesprechung – 1 h";
+  ta.value = (state.dayNotes || {})[ds] || "";
+  ta.addEventListener("input", () => setDayNote(ds, ta.value));
+  ta.addEventListener("keydown", e => {
+    if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+    e.preventDefault();
+    openDayNote(shiftDateStr(ds, e.key === "ArrowLeft" ? -1 : 1));
+  });
+  const hint = document.createElement("div");
+  hint.className = "dn-hint";
+  hint.textContent = "Wird automatisch gespeichert. Mit ‹ › (oder Alt+←/→) blätterst du wie im Ringbuch durch die Tage.";
+  dnBody.append(ta, hint);
+
+  // Am selben Tag fällige Aufgaben als Gedächtnisstütze
+  const due = settings().showDue ? (collectDueTasks()[ds] || []) : [];
+  if (due.length) {
+    const wrap = document.createElement("div");
+    wrap.className = "dn-due";
+    const lbl = document.createElement("div");
+    lbl.className = "dn-label";
+    lbl.textContent = "Fällige Aufgaben an diesem Tag";
+    wrap.appendChild(lbl);
+    for (const entry of due) {
+      const chip = document.createElement("span");
+      chip.className = "cal-chip";
+      chip.style.background = entry.board.color;
+      chip.textContent = entry.task.title;
+      chip.title = entry.board.name;
+      chip.addEventListener("click", () => {
+        closeDayNote();
+        openBoard(entry.board.id);
+        openModal(entry.task.id);
+      });
+      wrap.appendChild(chip);
+    }
+    dnBody.appendChild(wrap);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "dn-actions";
+  const listBtn = document.createElement("button");
+  listBtn.textContent = "📋 Monatsliste";
+  listBtn.title = "Alle Tagesnotizen dieses Monats";
+  listBtn.addEventListener("click", () => openDayNoteList(d.getFullYear(), d.getMonth()));
+  actions.appendChild(listBtn);
+  dnBody.appendChild(actions);
+
+  dnBackdrop.classList.add("open");
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+// Alle Werktage des Monats (plus Wochenenden mit Notiz) – leere Werktage
+// fallen so sofort auf, wenn man die Zeiten nachträgt
+function dayNoteListEntries(year, month) {
+  const notes = state.dayNotes || {};
+  const out = [];
+  const days = new Date(year, month + 1, 0).getDate();
+  for (let i = 1; i <= days; i++) {
+    const d = new Date(year, month, i);
+    const ds = dateStr(d);
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    if (weekend && !notes[ds]) continue;
+    out.push({ d, ds, text: notes[ds] || "" });
+  }
+  return out;
+}
+
+function dayNoteListText(year, month) {
+  const lines = [];
+  let kw = null;
+  for (const e of dayNoteListEntries(year, month)) {
+    const w = isoWeek(e.d);
+    if (w !== kw) { if (kw != null) lines.push(""); lines.push("KW " + w); kw = w; }
+    const [first, ...rest] = (e.text || "–").split("\n");
+    lines.push(shortDayLabel(e.d, true) + "\t" + first);
+    for (const r of rest) lines.push("\t\t" + r);
+  }
+  return lines.join("\n");
+}
+
+function openDayNoteList(year, month) {
+  dnView = { mode: "list", year, month };
+  dnTitle.textContent = "📝 " + new Date(year, month, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  dnPrev.textContent = "‹"; dnPrev.title = "Voriger Monat";
+  dnNext.textContent = "›"; dnNext.title = "Nächster Monat";
+  dnBody.innerHTML = "";
+
+  const entries = dayNoteListEntries(year, month);
+  const filled = entries.filter(e => e.text).length;
+
+  const actions = document.createElement("div");
+  actions.className = "dn-actions";
+  const copy = document.createElement("button");
+  copy.textContent = "📋 Als Text kopieren";
+  copy.title = "Liste in die Zwischenablage kopieren (z. B. für die Zeiterfassung)";
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(dayNoteListText(year, month));
+      copy.textContent = "✓ Kopiert";
+    } catch (e) {
+      copy.textContent = "Kopieren nicht möglich";
+    }
+    setTimeout(() => { copy.textContent = "📋 Als Text kopieren"; }, 1800);
+  });
+  const info = document.createElement("span");
+  info.className = "dn-hint";
+  info.style.alignSelf = "center";
+  info.textContent = filled + " von " + entries.length + " Tagen mit Notiz";
+  actions.append(copy, info);
+  dnBody.appendChild(actions);
+
+  let kw = null;
+  const todayS = todayStr();
+  for (const e of entries) {
+    const w = isoWeek(e.d);
+    if (w !== kw) {
+      const h = document.createElement("div");
+      h.className = "dn-kw";
+      h.textContent = "KW " + w;
+      dnBody.appendChild(h);
+      kw = w;
+    }
+    const row = document.createElement("div");
+    row.className = "dn-row";
+    row.title = "Notiz bearbeiten";
+    const dt = document.createElement("div");
+    dt.className = "dn-date";
+    dt.textContent = shortDayLabel(e.d, false);
+    if (e.ds === todayS) dt.style.color = "var(--accent)";
+    const tx = document.createElement("div");
+    tx.className = "dn-txt";
+    tx.textContent = e.text || "—";
+    if (!e.text) tx.style.color = "var(--text-light)";
+    row.append(dt, tx);
+    row.addEventListener("click", () => openDayNote(e.ds));
+    dnBody.appendChild(row);
+  }
+  dnBackdrop.classList.add("open");
+}
+
+function closeDayNote() {
+  dnBackdrop.classList.remove("open");
+  dnView = null;
+  renderCalendar();
+}
+
+dnPrev.addEventListener("click", () => {
+  if (!dnView) return;
+  if (dnView.mode === "day") openDayNote(shiftDateStr(dnView.ds, -1));
+  else openDayNoteList(dnView.month ? dnView.year : dnView.year - 1, (dnView.month + 11) % 12);
+});
+dnNext.addEventListener("click", () => {
+  if (!dnView) return;
+  if (dnView.mode === "day") openDayNote(shiftDateStr(dnView.ds, 1));
+  else openDayNoteList(dnView.month === 11 ? dnView.year + 1 : dnView.year, (dnView.month + 1) % 12);
+});
+document.getElementById("dn-close").addEventListener("click", closeDayNote);
+dnBackdrop.addEventListener("click", e => {
+  if (e.target === dnBackdrop) closeDayNote();
 });
 
 function renderBoardTile(board) {
@@ -4379,6 +4693,7 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   const searchBd = document.getElementById("search-backdrop");
   if (searchBd.classList.contains("open")) { searchBd.classList.remove("open"); return; }
+  if (dnBackdrop.classList.contains("open")) { closeDayNote(); return; }
   const pwBd = document.getElementById("pw-backdrop");
   if (!pwBd.hidden) { pwBd.hidden = true; return; }
   const newsBd = document.getElementById("news-backdrop");
@@ -4488,6 +4803,11 @@ function renderSearchResults() {
     if ((n.text || "").toLowerCase().includes(q)) {
       const first = (n.text || "").split("\n")[0].slice(0, 60);
       results.push({ title: first || "Notiz", meta: "🗒️ Notiz auf der Startseite", go: () => goHome() });
+    }
+  }
+  for (const [ds, text] of Object.entries(state.dayNotes || {}).sort((a, b) => b[0].localeCompare(a[0]))) {
+    if (text.toLowerCase().includes(q)) {
+      results.push({ title: text.split("\n")[0].slice(0, 60), meta: "📝 Tagesnotiz · " + shortDayLabel(parseDateStr(ds), true), go: () => { goHome(); openDayNote(ds); } });
     }
   }
 
@@ -4745,6 +5065,12 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 20, date: "24.09.2026", title: "Tagesnotizen im Kalender", items: [
+    "📝 Wie ein Wochenkalender-Ringbuch: Klick auf einen Tag im Kalender öffnet eine Notiz für genau diesen Tag – ideal, um Projektzeiten festzuhalten.",
+    "‹ › (oder Alt+←/→) blättert von Tag zu Tag; Tage mit Notiz sind im Kalender gelb markiert.",
+    "„📝 Notizen“ im Kalenderkopf zeigt alle Werktage eines Monats als Liste – Lücken fallen sofort auf, und mit einem Klick lässt sich alles als Text kopieren.",
+    "Die Tagesnotizen sind auch über die Suche (Strg+K) auffindbar. Der Kalender lässt sich jetzt auch ohne Fälligkeitsdaten einblenden."
+  ]},
   { version: 19, date: "04.09.2026", title: "Flüssigeres Verschieben", items: [
     "🖐️ Spalten lassen sich jetzt am kompletten farbigen Kopf packen und verschieben – vorher klappte das nur am schmalen Rand, weil jeder Klick auf den Titel die Umbenennung startete.",
     "✏️ Spalte umbenennen geht jetzt per Doppelklick auf den Titel oder über das ⋮-Menü; auch der Stift auf den Karten funktioniert in Chrome jetzt mit einem Klick.",
