@@ -4549,6 +4549,17 @@ function openOptionsMenu(anchor) {
     const sep2 = document.createElement("div");
     sep2.className = "sep";
     dd.appendChild(sep2);
+    const headK = document.createElement("div");
+    headK.className = "opt-hint";
+    headK.textContent = "Angemeldet als:";
+    dd.appendChild(headK);
+    const mailRow = document.createElement("div");
+    mailRow.className = "opt-hint";
+    mailRow.style.fontWeight = "600";
+    mailRow.style.color = "var(--text)";
+    mailRow.style.wordBreak = "break-all";
+    mailRow.textContent = "👤 " + (cloudUser.email || "(keine E-Mail hinterlegt)");
+    dd.appendChild(mailRow);
     const pwItem = document.createElement("div");
     pwItem.className = "item";
     pwItem.textContent = "🔑 Passwort festlegen / ändern…";
@@ -5440,6 +5451,7 @@ async function onLoggedIn(user) {
   cloudUser = user;
   loginOverlay.hidden = true;
   document.getElementById("btn-logout").hidden = false;
+  document.getElementById("btn-logout").title = "Vom Cloud-Konto abmelden (angemeldet als " + (user.email || "?") + ")";
   setCloudStatus("☁️ …", "Lade Daten aus der Cloud");
   const { data, error } = await sb.from("board_states")
     .select("state, updated_at").eq("user_id", user.id).maybeSingle();
