@@ -475,7 +475,7 @@
     word-wrap: break-word;
     outline: none;
     border-radius: 4px;
-    padding-right: 22px;
+    padding-right: 48px;
   }
   .card .card-title-edit {
     width: 100%;
@@ -506,6 +506,21 @@
   }
   .card:hover .card-edit-btn { visibility: visible; }
   .card .card-edit-btn:hover { background: var(--hover); color: var(--text); }
+  /* Archivieren direkt auf der Karte – links neben dem Stift */
+  .card .card-arch-btn {
+    position: absolute;
+    top: 7px; right: 32px;
+    background: var(--tile-bg);
+    border: none;
+    color: var(--text-light);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 5px;
+    visibility: hidden;
+  }
+  .card:hover .card-arch-btn { visibility: visible; }
+  .card .card-arch-btn:hover { background: var(--hover); color: var(--text); }
   .card .card-meta {
     margin-top: 6px;
     display: flex;
@@ -1553,6 +1568,7 @@
     /* Ohne Hover bleiben sonst versteckte Schaltflächen unerreichbar */
     .board-tile .tile-menu-btn,
     .card .card-edit-btn,
+    .card .card-arch-btn,
     .check-item .ci-del,
     .link-item .li-del,
     .comment .c-del,
@@ -1567,6 +1583,8 @@
     .cal-chip:hover { filter: none; }
     /* Größere Tippflächen */
     .card .card-edit-btn { font-size: 14px; padding: 4px 7px; }
+    .card .card-arch-btn { font-size: 14px; padding: 4px 7px; right: 42px; }
+    .card .card-title { padding-right: 74px; }
     .board-tile .tile-menu-btn { font-size: 18px; padding: 2px 8px; }
     .col-menu-btn { font-size: 18px; padding: 0 8px; }
     .check-item .ci-del, .link-item .li-del, .comment .c-del { font-size: 14px; padding: 2px 6px; }
@@ -3290,6 +3308,23 @@ function renderCard(task) {
   });
   card.appendChild(editBtn);
 
+  // Archivieren direkt auf der Karte – wirkt wie „✓ Abschließen“,
+  // ohne Rückfrage, dafür mit Rückgängig-Balken.
+  const archBtn = document.createElement("button");
+  archBtn.className = "card-arch-btn";
+  archBtn.textContent = "🗄️";
+  archBtn.title = "Archivieren";
+  archBtn.addEventListener("mousedown", e => { e.preventDefault(); e.stopPropagation(); });
+  archBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const f = findTask(task.id);
+    if (!f) return;
+    const undo = completeTask(f);
+    render();
+    offerUndo(`„${task.title}“ archiviert`, undo);
+  });
+  card.appendChild(archBtn);
+
   // Tags als farbige Chips
   if (settings().showTags && task.tagIds && task.tagIds.length) {
     const board = currentBoard();
@@ -4242,13 +4277,16 @@ function archiveTask(board, col, task) {
   (board.archive = board.archive || []).push({ task, colName: col.name, archivedAt: Date.now() });
 }
 
-document.getElementById("m-complete").addEventListener("click", () => {
-  const f = modalTaskId ? findTask(modalTaskId) : null;
-  if (!f) return;
+// Aufgabe abschließen: ins Archiv verschieben, bei Wiederholung den nächsten
+// Termin neu anlegen. Liefert eine Funktion zum Rückgängigmachen zurück.
+function completeTask(f) {
+  const { board, col, task: t } = f;
+  const index = col.tasks.indexOf(t);
+  const wasPinned = t.pinned;
+  let next = null;
   // Wiederkehrende Aufgabe: mit dem nächsten Termin neu anlegen
-  const t = f.task;
   if (t.repeat && t.due) {
-    f.col.tasks.push({
+    next = {
       id: uid(),
       title: t.title,
       description: t.description || "",
@@ -4260,10 +4298,23 @@ document.getElementById("m-complete").addEventListener("click", () => {
       tagIds: (t.tagIds || []).slice(),
       links: (t.links || []).map(l => ({ id: uid(), url: l.url })),
       checklist: (t.checklist || []).map(c => ({ id: uid(), text: c.text, done: false }))
-    });
+    };
+    col.tasks.push(next);
   }
-  archiveTask(f.board, f.col, f.task);
+  archiveTask(board, col, t);
   save();
+  return () => {
+    if (next) col.tasks = col.tasks.filter(x => x !== next);
+    board.archive = (board.archive || []).filter(e => e.task !== t);
+    t.pinned = wasPinned;
+    col.tasks.splice(Math.min(index, col.tasks.length), 0, t);
+  };
+}
+
+document.getElementById("m-complete").addEventListener("click", () => {
+  const f = modalTaskId ? findTask(modalTaskId) : null;
+  if (!f) return;
+  completeTask(f);
   closeModal();
 });
 
@@ -5076,6 +5127,11 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 21, date: "09.11.2026", title: "Archivieren direkt auf der Karte", items: [
+    "🗄️ Neben dem Stift auf jeder Karte erscheint beim Überfahren ein Archiv-Symbol: ein Klick schiebt die Aufgabe sofort ins Archiv – genau wie „✓ Abschließen“, nur ohne die Aufgabe zu öffnen.",
+    "Keine Rückfrage: Unten erscheint stattdessen einige Sekunden „Rückgängig“. Bei wiederkehrenden Aufgaben wird wie gewohnt der nächste Termin angelegt – Rückgängig nimmt auch den wieder weg.",
+    "Auf Touch-Geräten ist das Symbol dauerhaft sichtbar."
+  ]},
   { version: 20, date: "24.09.2026", title: "Tagesnotizen im Kalender", items: [
     "📝 Wie ein Wochenkalender-Ringbuch: Klick auf einen Tag im Kalender öffnet eine Notiz für genau diesen Tag – ideal, um Projektzeiten festzuhalten.",
     "‹ › (oder Alt+←/→) blättert von Tag zu Tag; Tage mit Notiz sind im Kalender gelb markiert.",
