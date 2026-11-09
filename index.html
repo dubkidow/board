@@ -476,7 +476,27 @@
     outline: none;
     border-radius: 4px;
     padding-right: 48px;
+    padding-left: 24px;
   }
+  /* Erledigt-Kreis links vor dem Titel */
+  .card .card-done-btn {
+    position: absolute;
+    top: 10px; left: 10px;
+    width: 17px; height: 17px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-light);
+    background: transparent;
+    color: transparent;
+    font-size: 11px;
+    line-height: 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .card .card-done-btn:hover { border-color: #2ea05c; color: #2ea05c; }
+  .card.is-done .card-done-btn { background: #2ea05c; border-color: #2ea05c; color: #fff; }
+  .card.is-done .card-title { text-decoration: line-through; color: var(--text-light); }
+  .card.is-done .card-tags, .card.is-done .card-meta { opacity: .6; }
   .card .card-title-edit {
     width: 100%;
     border: 1.5px solid var(--accent);
@@ -1203,6 +1223,7 @@
   .cal-chip:hover { filter: brightness(1.1); }
   .cal-chip.cal-over { outline: 2px solid var(--due-over, #e5484d); outline-offset: -2px; }
   .cal-chip.cal-soon { outline: 2px solid var(--due-soon, #fdd835); outline-offset: -2px; }
+  .cal-chip.cal-done { text-decoration: line-through; opacity: .55; }
   .cal-more { font-size: 10.5px; color: var(--text-light); }
   .cal-day { cursor: pointer; transition: background .12s; }
   .cal-day:hover { background: var(--hover); }
@@ -1584,7 +1605,8 @@
     /* Größere Tippflächen */
     .card .card-edit-btn { font-size: 14px; padding: 4px 7px; }
     .card .card-arch-btn { font-size: 14px; padding: 4px 7px; right: 42px; }
-    .card .card-title { padding-right: 74px; }
+    .card .card-title { padding-right: 74px; padding-left: 28px; }
+    .card .card-done-btn { width: 21px; height: 21px; line-height: 18px; font-size: 13px; top: 9px; }
     .board-tile .tile-menu-btn { font-size: 18px; padding: 2px 8px; }
     .col-menu-btn { font-size: 18px; padding: 0 8px; }
     .check-item .ci-del, .link-item .li-del, .comment .c-del { font-size: 14px; padding: 2px 6px; }
@@ -2074,7 +2096,7 @@ function dueClass(due) {
 // Badge "📅 …" für Karten (Board + Startseite)
 function makeDueBadge(task) {
   const d = document.createElement("span");
-  d.className = "due-badge" + dueClass(task.due);
+  d.className = "due-badge" + (task.done ? "" : dueClass(task.due));
   d.textContent = "📅 " + formatDue(task.due);
   d.title = "Fällig am " + task.due.split("-").reverse().join(".");
   return d;
@@ -2547,13 +2569,15 @@ function renderCalendar() {
       for (const entry of entries.slice(0, MAX)) {
         const chip = document.createElement("span");
         let status = "";
-        if (ds < todayS) status = " cal-over";
+        if (entry.task.done) status = " cal-done";
+        else if (ds < todayS) status = " cal-over";
         else if (ds > todayS && soonLimit && ds <= soonLimit) status = " cal-soon";
         chip.className = "cal-chip" + status;
         chip.style.background = entry.board.color;
         chip.textContent = entry.task.title;
         chip.title = entry.task.title + "  (" + entry.board.name +
-          (status === " cal-over" ? ", überfällig" : status === " cal-soon" ? ", bald fällig" : "") + ")";
+          (status === " cal-over" ? ", überfällig" : status === " cal-soon" ? ", bald fällig" :
+           status === " cal-done" ? ", erledigt" : "") + ")";
         chip.addEventListener("click", e => {
           e.stopPropagation();
           openBoard(entry.board.id);
@@ -2665,7 +2689,7 @@ function openDayNote(ds) {
     wrap.appendChild(lbl);
     for (const entry of due) {
       const chip = document.createElement("span");
-      chip.className = "cal-chip";
+      chip.className = "cal-chip" + (entry.task.done ? " cal-done" : "");
       chip.style.background = entry.board.color;
       chip.textContent = entry.task.title;
       chip.title = entry.board.name;
@@ -3266,6 +3290,23 @@ function renderCard(task) {
   t.textContent = task.title;
   t.spellcheck = false;
   card.appendChild(t);
+
+  // Erledigt-Kreis: abhaken = durchstreichen, Aufgabe bleibt an ihrem Platz
+  if (task.done) card.classList.add("is-done");
+  const doneBtn = document.createElement("button");
+  doneBtn.className = "card-done-btn";
+  doneBtn.textContent = "✓";
+  doneBtn.title = task.done ? "Wieder als offen markieren" : "Als erledigt markieren";
+  doneBtn.addEventListener("mousedown", e => { e.preventDefault(); e.stopPropagation(); });
+  doneBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const f = findTask(task.id);
+    if (!f) return;
+    toggleDone(f);
+    save();
+    render();
+  });
+  card.appendChild(doneBtn);
 
   // Umbenennen direkt auf der Karte (über den Stift beim Hovern):
   // echtes Eingabefeld statt contentEditable – das ist in Chrome zuverlässig,
@@ -4277,16 +4318,9 @@ function archiveTask(board, col, task) {
   (board.archive = board.archive || []).push({ task, colName: col.name, archivedAt: Date.now() });
 }
 
-// Aufgabe abschließen: ins Archiv verschieben, bei Wiederholung den nächsten
-// Termin neu anlegen. Liefert eine Funktion zum Rückgängigmachen zurück.
-function completeTask(f) {
-  const { board, col, task: t } = f;
-  const index = col.tasks.indexOf(t);
-  const wasPinned = t.pinned;
-  let next = null;
-  // Wiederkehrende Aufgabe: mit dem nächsten Termin neu anlegen
-  if (t.repeat && t.due) {
-    next = {
+// Neue Aufgabe für den nächsten Termin einer wiederkehrenden Aufgabe
+function makeNextOccurrence(t) {
+  return {
       id: uid(),
       title: t.title,
       description: t.description || "",
@@ -4298,7 +4332,44 @@ function completeTask(f) {
       tagIds: (t.tagIds || []).slice(),
       links: (t.links || []).map(l => ({ id: uid(), url: l.url })),
       checklist: (t.checklist || []).map(c => ({ id: uid(), text: c.text, done: false }))
-    };
+  };
+}
+
+// Erledigt-Kreis umschalten. Wiederkehrende Aufgaben bekommen beim Abhaken
+// sofort ihren nächsten Termin; Zurücknehmen entfernt diesen wieder.
+function toggleDone(f) {
+  const { col, task: t } = f;
+  if (!t.done) {
+    t.done = true;
+    t.doneAt = Date.now();
+    if (t.repeat && t.due && !t.doneNextId) {
+      const next = makeNextOccurrence(t);
+      col.tasks.push(next);
+      t.doneNextId = next.id;
+    }
+  } else {
+    t.done = false;
+    delete t.doneAt;
+    if (t.doneNextId) {
+      const n = findTask(t.doneNextId);
+      if (n) n.col.tasks = n.col.tasks.filter(x => x !== n.task);
+      delete t.doneNextId;
+    }
+  }
+  touch(t);
+}
+
+// Aufgabe abschließen: ins Archiv verschieben, bei Wiederholung den nächsten
+// Termin neu anlegen. Liefert eine Funktion zum Rückgängigmachen zurück.
+function completeTask(f) {
+  const { board, col, task: t } = f;
+  const index = col.tasks.indexOf(t);
+  const wasPinned = t.pinned;
+  let next = null;
+  // Wiederkehrende Aufgabe: mit dem nächsten Termin neu anlegen –
+  // außer er wurde schon beim Abhaken (Erledigt-Kreis) angelegt
+  if (t.repeat && t.due && !t.doneNextId) {
+    next = makeNextOccurrence(t);
     col.tasks.push(next);
   }
   archiveTask(board, col, t);
@@ -4444,9 +4515,10 @@ function runAutoArchive() {
   let n = 0;
   for (const board of state.boards) {
     for (const col of board.columns) {
-      if (!/erledigt|fertig|abgeschlossen|done/i.test(col.name)) continue;
+      const doneCol = /erledigt|fertig|abgeschlossen|done/i.test(col.name);
       for (const task of [...col.tasks]) {
-        const ts = task.updatedAt || task.createdAt || 0;
+        // Abgehakte Aufgaben (Erledigt-Kreis) zählen ab dem Abhaken – in jeder Spalte
+        const ts = task.done ? (task.doneAt || 0) : doneCol ? (task.updatedAt || task.createdAt || 0) : 0;
         if (ts && ts < limit) { archiveTask(board, col, task); n++; }
       }
     }
@@ -4491,7 +4563,7 @@ function openOptionsMenu(anchor) {
   mkToggle("🗒️ Notizen auf der Startseite", "showNotes");
   mkToggle("🏷️ Tags", "showTags");
   mkToggle("🗄️ Automatisch archivieren", "autoArchive",
-    "Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen, wandern ins Archiv.",
+    "Aufgaben, die 14 Tage unverändert in einer „Erledigt“-Spalte liegen oder seit 14 Tagen abgehakt sind, wandern ins Archiv.",
     () => {
       const n = runAutoArchive();
       if (n) render();
@@ -5127,6 +5199,12 @@ importFile.addEventListener("change", () => {
 /* ================= Was ist neu? ================= */
 
 const CHANGELOG = [
+  { version: 22, date: "09.11.2026", title: "Aufgaben abhaken", items: [
+    "○ Jede Karte hat links vor dem Titel einen Kreis: ein Klick hakt die Aufgabe ab – sie wird durchgestrichen und bleibt an ihrem Platz. Nochmal klicken macht sie wieder offen.",
+    "Abgehakte Aufgaben gelten nicht mehr als überfällig und erscheinen im Kalender durchgestrichen.",
+    "🔁 Bei wiederkehrenden Aufgaben wird beim Abhaken sofort der nächste Termin angelegt; das Zurücknehmen entfernt ihn wieder.",
+    "Ist das automatische Archiv eingeschaltet, wandern abgehakte Aufgaben nach 14 Tagen ins Archiv – egal in welcher Spalte. Sofort wegräumen geht weiterhin mit 🗄️."
+  ]},
   { version: 21, date: "09.11.2026", title: "Archivieren direkt auf der Karte", items: [
     "🗄️ Neben dem Stift auf jeder Karte erscheint beim Überfahren ein Archiv-Symbol: ein Klick schiebt die Aufgabe sofort ins Archiv – genau wie „✓ Abschließen“, nur ohne die Aufgabe zu öffnen.",
     "Keine Rückfrage: Unten erscheint stattdessen einige Sekunden „Rückgängig“. Bei wiederkehrenden Aufgaben wird wie gewohnt der nächste Termin angelegt – Rückgängig nimmt auch den wieder weg.",
